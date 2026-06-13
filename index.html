@@ -1,78 +1,1283 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Menu AI">
-    <title>Menu AI</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #000; color: #fff; height: 100vh; }
-        .container { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: 0 auto; }
-        header { background: #0d0d0d; padding: 16px 20px; border-bottom: 1px solid #1a1a1a; }
-        header h1 { font-size: 20px; font-weight: 600; }
-        .tabs { display: flex; gap: 8px; margin-top: 12px; }
-        .tab { padding: 8px 16px; background: #1a1a1a; border: none; border-radius: 8px; color: #888; font-size: 14px; }
-        .tab.active { background: #fff; color: #000; }
-        .content { flex: 1; overflow-y: auto; padding: 16px; }
-        .messages { margin-bottom: 16px; }
-        .message { margin-bottom: 12px; padding: 12px 16px; background: #1a1a1a; border-radius: 10px; font-size: 14px; }
-        .message.user { background: #2a2a2a; }
-        .message.ai { background: #0d47a1; }
-        .input-area { display: flex; gap: 8px; }
-        .input-area input { flex: 1; padding: 12px 16px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; color: #fff; font-size: 14px; }
-        .input-area button { padding: 12px 20px; background: #fff; border: none; border-radius: 10px; color: #000; font-size: 14px; font-weight: 600; }
-        .generate-btn { width: 100%; padding: 14px; background: #fff; border: none; border-radius: 10px; color: #000; font-size: 15px; font-weight: 600; margin-bottom: 16px; }
-        .day-card { background: #1a1a1a; border-radius: 10px; padding: 14px; margin-bottom: 10px; }
-        .day-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
-        .meal { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2a2a2a; }
-        .meal:last-child { border-bottom: none; }
-        .meal-name { font-size: 13px; color: #ccc; }
-        .meal-cal { font-size: 12px; color: #888; }
-        .macros-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-top: 12px; }
-        .macro-item { background: #0d0d0d; padding: 12px; border-radius: 8px; text-align: center; }
-        .macro-value { font-size: 20px; font-weight: 700; color: #fff; }
-        .macro-label { font-size: 11px; color: #888; }
-        .hidden { display: none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Macro AI">
+<meta name="theme-color" content="#0a0a0a">
+<title>Macro AI — Menù Nutrizionale</title>
+<style>
+:root{
+  --bg:#0a0a0a; --card:#161616; --card2:#1f1f1f; --line:#262626;
+  --txt:#f5f5f5; --muted:#8a8a8a; --accent:#34d399; --accent2:#22d3ee;
+  --pro:#60a5fa; --car:#fbbf24; --fat:#f472b6; --cal:#34d399;
+  --danger:#f87171; --warn:#fbbf24;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:520px;margin:0 auto;position:relative;background:var(--bg)}
+
+/* Header */
+header{padding:max(14px,env(safe-area-inset-top)) 18px 12px;background:linear-gradient(180deg,#111,#0a0a0a);border-bottom:1px solid var(--line);flex-shrink:0}
+.htop{display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:19px;font-weight:700;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+.logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:15px}
+.gear{background:var(--card2);border:none;color:var(--txt);width:36px;height:36px;border-radius:11px;font-size:17px;display:flex;align-items:center;justify-content:center}
+
+/* Content */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px}
+.screen{display:none;animation:fade .25s ease}
+.screen.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Bottom nav */
+.nav{display:flex;background:#0d0d0d;border-top:1px solid var(--line);padding:8px 8px max(8px,env(safe-area-inset-bottom));flex-shrink:0}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;border-radius:10px;transition:.15s}
+.nav button .ic{font-size:20px}
+.nav button.active{color:var(--accent)}
+
+/* Cards & generic */
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.card h2{font-size:16px;font-weight:700;margin-bottom:4px}
+.card .sub{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px}
+.btn{display:block;width:100%;padding:15px;border:none;border-radius:14px;font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#04130d;text-align:center;cursor:pointer}
+.btn:active{transform:scale(.98)}
+.btn.sec{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--txt)}
+.btn.danger{background:rgba(248,113,113,.12);color:var(--danger);border:1px solid rgba(248,113,113,.3)}
+.btn.sm{padding:9px 14px;font-size:13px;width:auto;display:inline-block;border-radius:11px}
+.row{display:flex;gap:10px}
+.row .btn{flex:1}
+
+/* Inputs */
+label.fld{display:block;margin-bottom:14px}
+label.fld .lab{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:7px;display:block}
+label.fld .hint{font-size:11.5px;color:var(--muted);font-weight:400}
+input[type=text],input[type=number],textarea,select{width:100%;padding:13px 14px;background:var(--card2);border:1px solid var(--line);border-radius:12px;color:var(--txt);font-size:15px;font-family:inherit;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:64px;line-height:1.5}
+.stepper{display:flex;align-items:center;gap:14px}
+.stepper button{width:42px;height:42px;border-radius:12px;background:var(--card2);border:1px solid var(--line);color:var(--txt);font-size:22px;font-weight:700;flex-shrink:0}
+.stepper .val{flex:1;text-align:center;font-size:24px;font-weight:800}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:9px 14px;background:var(--card2);border:1px solid var(--line);border-radius:20px;font-size:13px;font-weight:600;color:var(--muted)}
+.chip.on{background:var(--accent);color:#04130d;border-color:var(--accent)}
+.toggle{display:flex;align-items:center;justify-content:space-between;padding:13px 0}
+.toggle .tlab{font-size:14px;font-weight:600}
+.sw{width:50px;height:30px;border-radius:30px;background:var(--card2);border:1px solid var(--line);position:relative;flex-shrink:0;transition:.2s}
+.sw.on{background:var(--accent);border-color:var(--accent)}
+.sw::after{content:'';position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.2s}
+.sw.on::after{left:22px}
+
+/* Onboarding */
+.ob-prog{display:flex;gap:5px;margin-bottom:20px}
+.ob-prog span{flex:1;height:4px;border-radius:4px;background:var(--card2)}
+.ob-prog span.done{background:var(--accent)}
+.ob-step{display:none}
+.ob-step.active{display:block;animation:fade .25s}
+.ob-emoji{font-size:38px;margin-bottom:10px}
+.ob-step h2{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px}
+.ob-step p.q{font-size:14px;color:var(--muted);line-height:1.5;margin-bottom:20px}
+
+/* Macro pills */
+.macro-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mp{background:var(--card2);border-radius:12px;padding:10px 6px;text-align:center}
+.mp .v{font-size:17px;font-weight:800}
+.mp .l{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.mp.cal .v{color:var(--cal)} .mp.pro .v{color:var(--pro)} .mp.car .v{color:var(--car)} .mp.fat .v{color:var(--fat)}
+
+/* Day cards */
+.daysel{display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:4px;-webkit-overflow-scrolling:touch}
+.daysel::-webkit-scrollbar{display:none}
+.dpill{flex-shrink:0;padding:9px 13px;border-radius:12px;background:var(--card2);border:1px solid var(--line);font-size:12px;font-weight:700;color:var(--muted);position:relative;text-align:center;min-width:52px}
+.dpill .dd{font-size:10px;font-weight:600;color:var(--muted);display:block}
+.dpill.on{background:var(--accent);color:#04130d;border-color:var(--accent)}
+.dpill.on .dd{color:#04130d}
+.dpill .tdot{position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--accent2)}
+
+.daytitle{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.daytitle h2{font-size:20px;font-weight:800}
+.daytag{font-size:11px;font-weight:700;padding:4px 9px;border-radius:8px;background:rgba(52,211,153,.14);color:var(--accent)}
+.daytag.rest{background:rgba(96,165,250,.14);color:var(--pro)}
+.daytag.special{background:rgba(244,114,182,.14);color:var(--fat)}
+
+/* Target bar */
+.tgt{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+.tgt-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.tgt-h .tt{font-size:12px;color:var(--muted);font-weight:600}
+.bar{height:8px;border-radius:8px;background:var(--card2);overflow:hidden;margin:4px 0 2px}
+.bar>i{display:block;height:100%;border-radius:8px;transition:.4s}
+.barlabel{display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px}
+.barlabel b{font-weight:700}
+
+/* Meal card */
+.meal{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.meal-h{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;background:var(--card)}
+.meal-h .mt{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.meal-h .mc{font-size:12px;color:var(--muted);font-weight:600}
+.meal.cheat .meal-h{background:linear-gradient(90deg,rgba(244,114,182,.12),transparent)}
+.cheatbadge{font-size:10px;font-weight:800;padding:3px 7px;border-radius:7px;background:var(--fat);color:#1a0410}
+.food{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-top:1px solid var(--line)}
+.food .fi{flex:1;min-width:0}
+.food .fn{font-size:14px;font-weight:600}
+.food .fg{font-size:11.5px;color:var(--muted);margin-top:2px}
+.food .fmac{display:flex;gap:7px;margin-top:5px;font-size:10.5px;font-weight:700}
+.food .fmac .p{color:var(--pro)} .food .fmac .c{color:var(--car)} .food .fmac .f{color:var(--fat)} .food .fmac .k{color:var(--cal)}
+.food .fedit{background:var(--card2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:10px;font-size:14px;flex-shrink:0;margin-left:8px}
+.meal-foot{display:flex;gap:8px;padding:10px 15px;border-top:1px solid var(--line)}
+.meal-foot button{flex:1;background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:9px;border-radius:10px;font-size:12px;font-weight:600}
+
+/* Chat / Coach */
+.chat{display:flex;flex-direction:column;height:100%}
+.msgs{flex:1;overflow-y:auto;padding:4px 2px 12px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:86%;padding:11px 14px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word}
+.msg.ai{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px;align-self:flex-start}
+.msg.user{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#04130d;border-bottom-right-radius:5px;align-self:flex-end;font-weight:600}
+.msg.ai b{color:var(--accent)}
+.quick{display:flex;gap:7px;overflow-x:auto;padding:8px 0;-webkit-overflow-scrolling:touch}
+.quick::-webkit-scrollbar{display:none}
+.quick button{flex-shrink:0;background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:8px 13px;border-radius:18px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.chatbar{display:flex;gap:8px;padding-top:8px;border-top:1px solid var(--line)}
+.chatbar input{flex:1}
+.chatbar button{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#04130d;width:48px;border-radius:12px;font-size:18px;font-weight:700;flex-shrink:0}
+
+/* Shopping & recipes */
+.cat-h{font-size:13px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
+.shop-item{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+.shop-item .ck{width:24px;height:24px;border-radius:8px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:transparent}
+.shop-item.done .ck{background:var(--accent);border-color:var(--accent);color:#04130d}
+.shop-item.done .si-n{text-decoration:line-through;color:var(--muted)}
+.shop-item .si-n{flex:1;font-size:14px;font-weight:600}
+.shop-item .si-q{font-size:12px;color:var(--muted);font-weight:600}
+.recipe{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:12px}
+.recipe .rh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.recipe .rh .rt{font-size:15px;font-weight:700}
+.recipe .af{font-size:10px;font-weight:800;padding:3px 8px;border-radius:7px;background:rgba(34,211,238,.14);color:var(--accent2)}
+.recipe .ring{font-size:12.5px;color:var(--muted);line-height:1.6}
+.recipe .rsteps{font-size:13px;line-height:1.6;margin-top:8px;color:var(--txt)}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.modal-bg.show{display:flex;animation:fade .2s}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:22px 22px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;padding:18px 18px max(18px,env(safe-area-inset-bottom));animation:slideup .28s cubic-bezier(.2,.9,.3,1)}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
+.modal .grab{width:38px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 14px}
+.modal h3{font-size:18px;font-weight:800;margin-bottom:4px}
+.modal .msub{font-size:13px;color:var(--muted);margin-bottom:16px}
+.altlist{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.alt{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--card2);border:1px solid var(--line);border-radius:13px}
+.alt .an{font-size:14px;font-weight:600}
+.alt .am{font-size:11px;color:var(--muted);margin-top:2px}
+.alt button{background:var(--accent);border:none;color:#04130d;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;flex-shrink:0;margin-left:8px}
+.divlbl{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px;display:flex;align-items:center;gap:10px}
+.divlbl::before,.divlbl::after{content:'';flex:1;height:1px;background:var(--line)}
+.note{font-size:12px;color:var(--muted);line-height:1.5;background:var(--card2);border-radius:10px;padding:10px 12px;margin-top:10px}
+
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty .ee{font-size:46px;margin-bottom:12px}
+.empty h3{font-size:17px;font-weight:700;color:var(--txt);margin-bottom:6px}
+.empty p{font-size:13px;line-height:1.5}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#04130d;padding:11px 18px;border-radius:12px;font-size:13px;font-weight:700;z-index:100;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(4,19,13,.3);border-top-color:#04130d;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Print */
+#printArea{display:none}
+@media print{
+  body *{visibility:hidden}
+  #printArea,#printArea *{visibility:visible}
+  #printArea{display:block;position:absolute;left:0;top:0;width:100%;padding:24px;background:#fff;color:#000;font-size:12px}
+  .app{display:none}
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Menu AI</h1>
-            <div class="tabs">
-                <button class="tab active" onclick="showTab('chat')">Chat</button>
-                <button class="tab" onclick="showTab('menu')">Menù</button>
-            </div>
-        </header>
-        <div class="content">
-            <div id="chat-tab">
-                <div class="messages" id="messages">
-                    <div class="message ai">Ciao! 👋 Chiedimi genera menù settimanale!</div>
-                </div>
-                <div class="input-area">
-                    <input type="text" id="chatInput" placeholder="Scrivi..." onkeypress="if(event.key==='Enter')sendMessage()">
-                    <button onclick="sendMessage()">Invia</button>
-                </div>
-            </div>
-            <div id="menu-tab" class="hidden">
-                <button class="generate-btn" onclick="generateMenu()">Genera Menù</button>
-                <div class="macros-grid">
-                    <div class="macro-item"><div class="macro-value" id="cal">0</div><div class="macro-label">Cal</div></div>
-                    <div class="macro-item"><div class="macro-value" id="pro">0</div><div class="macro-label">Pro</div></div>
-                    <div class="macro-item"><div class="macro-value" id="car">0</div><div class="macro-label">Car</div></div>
-                    <div class="macro-item"><div class="macro-value" id="fat">0</div><div class="macro-label">Fat</div></div>
-                </div>
-                <div id="menuDays"></div>
-            </div>
-        </div>
+<div class="app">
+  <header>
+    <div class="htop">
+      <h1><span class="logo">🥗</span> Macro AI</h1>
+      <button class="gear" onclick="openSettings()" id="gearBtn" style="display:none">⚙️</button>
     </div>
-    <script>
-        function showTab(n) { document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('#chat-tab,#menu-tab').forEach(d=>d.classList.add('hidden')); document.getElementById(n+'-tab').classList.remove('hidden'); document.querySelectorAll('.tab')[n=='chat'?0:1].classList.add('active'); }
-        function sendMessage() { const i=document.getElementById('chatInput'),m=i.value.trim(); if(!m)return; document.getElementById('messages').innerHTML+=`<div class="message user">${m}</div>`; i.value=''; setTimeout(()=>{ document.getElementById('messages').innerHTML+=`<div class="message ai">Perfetto! Genero menù. Vai su Menù! 🍽️</div>`; generateMenu(); showTab('menu'); },800); }
-        function generateMenu() { const days=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica']; const meals={c:['Pizza uova','Porridge','Smoothie','Pane uova','Creppe','French toast','Avocado toast'],p:['Riso tofu','Quinoa pollo','Pasta legumi','Bowl riso','Insalata farro','Wrap tacchino','Sushi'],v:['Pesce verdure','Pollo quinoa','Hamburger','Zuppa','Verdure riso','Bistecca','Sigma pesce']}; let tcal=0,tpro=0,tcar=0,tfat=0,d={}; days.forEach((day,idx)=>{ const c=2000+Math.floor(Math.random()*200),p=Math.floor(c*0.3/4),car=Math.floor(c*0.4/4),f=Math.floor(c*0.3/9); tcal+=c;tpro+=p;tcar+=car;tfat+=f;d[day]={c:{n:meals.c[idx%7],c:Math.floor(c*0.25)},p:{n:meals.p[idx%7],c:Math.floor(c*0.35)},v:{n:meals.v[idx%7],c:Math.floor(c*0.4)}}; }); document.getElementById('cal').textContent=Math.floor(tcal/7); document.getElementById('pro').textContent=Math.floor(tpro/7); document.getElementById('car').textContent=Math.floor(tcar/7); document.getElementById('fat').textContent=Math.floor(tfat/7); let html=''; days.forEach(day=>{ html+=`<div class="day-card"><h3>${day}</h3><div class="meal"><span class="meal-name">☀️ ${d[day].c.n}</span><span class="meal-cal">${d[day].c.c}</span></div><div class="meal"><span class="meal-name">🌤️ ${d[day].p.n}</span><span class="meal-cal">${d[day].p.c}</span></div><div class="meal"><span class="meal-name">🌙 ${d[day].v.n}</span><span class="meal-cal">${d[day].v.c}</span></div></div>`; }); document.getElementById('menuDays').innerHTML=html; }
-        generateMenu();
-    </script>
+  </header>
+
+  <div class="content">
+    <!-- ONBOARDING -->
+    <div class="screen" id="sc-onboarding">
+      <div class="ob-prog" id="obProg"></div>
+      <div id="obSteps"></div>
+    </div>
+
+    <!-- MENU -->
+    <div class="screen" id="sc-menu"></div>
+
+    <!-- COACH -->
+    <div class="screen" id="sc-coach">
+      <div class="chat">
+        <div class="msgs" id="msgs"></div>
+        <div class="quick" id="quick"></div>
+        <div class="chatbar">
+          <input type="text" id="chatIn" placeholder="Scrivi al tuo AI coach…" enterkeyhint="send">
+          <button onclick="coachSend()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHOPPING -->
+    <div class="screen" id="sc-shop"></div>
+
+    <!-- RECIPES -->
+    <div class="screen" id="sc-recipes"></div>
+
+    <!-- SETTINGS -->
+    <div class="screen" id="sc-settings"></div>
+  </div>
+
+  <div class="nav" id="nav" style="display:none">
+    <button data-sc="menu" onclick="go('menu')"><span class="ic">📅</span>Menù</button>
+    <button data-sc="coach" onclick="go('coach')"><span class="ic">🤖</span>Coach</button>
+    <button data-sc="shop" onclick="go('shop')"><span class="ic">🛒</span>Spesa</button>
+    <button data-sc="recipes" onclick="go('recipes')"><span class="ic">📖</span>Ricette</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+<div class="toast" id="toast"></div>
+<div id="printArea"></div>
+
+<script>
+/* ============================================================
+   MACRO AI — single-file nutrition menu app
+   Tutto in locale (localStorage). Nessun dato lasciato il telefono.
+   ============================================================ */
+
+/* ---------- FOOD DATABASE (valori per 100g a CRUDO) ----------
+   k=kcal, p=proteine, c=carboidrati, f=grassi
+   cat: pro|carb|fat|veg|fruit|dairy
+   tags: bk(adatto colazione)
+   alg: allergeni  */
+const DB = [
+  // PROTEINE
+  {n:'Petto di pollo',k:110,p:23,c:0,f:1.5,cat:'pro',alg:[]},
+  {n:'Fesa di tacchino',k:107,p:24,c:0,f:1,cat:'pro',alg:[]},
+  {n:'Manzo magro',k:130,p:21,c:0,f:5,cat:'pro',alg:[]},
+  {n:'Uova',k:143,p:13,c:1,f:9,cat:'pro',alg:['uova'],tags:['bk']},
+  {n:'Albume',k:52,p:11,c:1,f:0,cat:'pro',alg:['uova'],tags:['bk']},
+  {n:'Salmone',k:208,p:20,c:0,f:13,cat:'pro',alg:['pesce']},
+  {n:'Merluzzo',k:82,p:18,c:0,f:0.7,cat:'pro',alg:['pesce']},
+  {n:'Tonno al naturale',k:103,p:24,c:0,f:1,cat:'pro',alg:['pesce']},
+  {n:'Gamberi',k:85,p:18,c:0,f:1,cat:'pro',alg:['crostacei']},
+  {n:'Tofu',k:144,p:15,c:2,f:9,cat:'pro',alg:['soia']},
+  {n:'Tempeh',k:192,p:19,c:8,f:11,cat:'pro',alg:['soia']},
+  {n:'Seitan',k:121,p:24,c:4,f:1,cat:'pro',alg:['glutine']},
+  {n:'Bresaola',k:151,p:32,c:0,f:2,cat:'pro',alg:[]},
+  {n:'Sgombro',k:205,p:19,c:0,f:14,cat:'pro',alg:['pesce']},
+  {n:'Yogurt greco 0%',k:57,p:10,c:4,f:0,cat:'dairy',alg:['lattosio'],tags:['bk']},
+  {n:'Fiocchi di latte',k:98,p:11,c:3,f:4,cat:'dairy',alg:['lattosio'],tags:['bk']},
+  {n:'Ricotta',k:146,p:11,c:3,f:10,cat:'dairy',alg:['lattosio'],tags:['bk']},
+  {n:'Lenticchie',k:116,p:9,c:20,f:0.4,cat:'pro',alg:[]},
+  {n:'Ceci',k:139,p:9,c:20,f:2.6,cat:'pro',alg:[]},
+  {n:'Fagioli',k:127,p:9,c:22,f:0.5,cat:'pro',alg:[]},
+  {n:'Edamame',k:121,p:12,c:9,f:5,cat:'pro',alg:['soia']},
+  // CARBOIDRATI
+  {n:'Riso basmati',k:130,p:2.7,c:28,f:0.3,cat:'carb',alg:[]},
+  {n:'Riso integrale',k:111,p:2.6,c:23,f:0.9,cat:'carb',alg:[]},
+  {n:'Pasta integrale',k:124,p:5,c:25,f:1.2,cat:'carb',alg:['glutine']},
+  {n:'Pasta semola',k:158,p:5.8,c:31,f:0.9,cat:'carb',alg:['glutine']},
+  {n:'Patate',k:77,p:2,c:17,f:0.1,cat:'carb',alg:[]},
+  {n:'Patate dolci',k:86,p:1.6,c:20,f:0.1,cat:'carb',alg:[]},
+  {n:'Pane integrale',k:247,p:9,c:41,f:3.5,cat:'carb',alg:['glutine'],tags:['bk']},
+  {n:'Quinoa',k:120,p:4.4,c:21,f:1.9,cat:'carb',alg:[]},
+  {n:'Cous cous',k:112,p:3.8,c:23,f:0.2,cat:'carb',alg:['glutine']},
+  {n:'Avena',k:389,p:13,c:66,f:7,cat:'carb',alg:['glutine'],tags:['bk']},
+  {n:'Farro',k:127,p:5,c:26,f:0.8,cat:'carb',alg:['glutine']},
+  {n:'Gallette di riso',k:387,p:8,c:81,f:3,cat:'carb',alg:[],tags:['bk']},
+  {n:'Polenta',k:85,p:2,c:18,f:0.4,cat:'carb',alg:[]},
+  // GRASSI
+  {n:'Olio EVO',k:884,p:0,c:0,f:100,cat:'fat',alg:[]},
+  {n:'Avocado',k:160,p:2,c:9,f:15,cat:'fat',alg:[]},
+  {n:'Mandorle',k:579,p:21,c:22,f:49,cat:'fat',alg:['frutta a guscio']},
+  {n:'Noci',k:654,p:15,c:14,f:65,cat:'fat',alg:['frutta a guscio']},
+  {n:'Burro di arachidi',k:588,p:25,c:20,f:50,cat:'fat',alg:['arachidi'],tags:['bk']},
+  {n:'Semi di chia',k:486,p:17,c:42,f:31,cat:'fat',alg:[],tags:['bk']},
+  {n:'Parmigiano',k:392,p:33,c:0,f:29,cat:'fat',alg:['lattosio']},
+  {n:'Olio di cocco',k:862,p:0,c:0,f:100,cat:'fat',alg:[]},
+  // VERDURE
+  {n:'Zucchine',k:17,p:1.2,c:3,f:0.3,cat:'veg',alg:[]},
+  {n:'Broccoli',k:34,p:2.8,c:7,f:0.4,cat:'veg',alg:[]},
+  {n:'Spinaci',k:23,p:2.9,c:3.6,f:0.4,cat:'veg',alg:[]},
+  {n:'Insalata mista',k:15,p:1.4,c:2.9,f:0.2,cat:'veg',alg:[]},
+  {n:'Pomodori',k:18,p:0.9,c:3.9,f:0.2,cat:'veg',alg:[]},
+  {n:'Peperoni',k:31,p:1,c:6,f:0.3,cat:'veg',alg:[]},
+  {n:'Melanzane',k:25,p:1,c:6,f:0.2,cat:'veg',alg:[]},
+  {n:'Carote',k:41,p:0.9,c:10,f:0.2,cat:'veg',alg:[]},
+  {n:'Asparagi',k:20,p:2.2,c:3.9,f:0.1,cat:'veg',alg:[]},
+  {n:'Funghi',k:22,p:3.1,c:3.3,f:0.3,cat:'veg',alg:[]},
+  {n:'Cavolfiore',k:25,p:1.9,c:5,f:0.3,cat:'veg',alg:[]},
+  // FRUTTA
+  {n:'Banana',k:89,p:1.1,c:23,f:0.3,cat:'fruit',alg:[],tags:['bk']},
+  {n:'Mela',k:52,p:0.3,c:14,f:0.2,cat:'fruit',alg:[],tags:['bk']},
+  {n:'Frutti di bosco',k:43,p:1,c:10,f:0.3,cat:'fruit',alg:[],tags:['bk']},
+  {n:'Kiwi',k:61,p:1.1,c:15,f:0.5,cat:'fruit',alg:[],tags:['bk']},
+  {n:'Arancia',k:47,p:0.9,c:12,f:0.1,cat:'fruit',alg:[],tags:['bk']},
+];
+const findFood=n=>DB.find(x=>x.n===n);
+
+const DAYS=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
+const DSHORT=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+
+/* ---------- STATE ---------- */
+let S = load() || null;       // profilo + impostazioni
+let MENU = loadMenu() || null; // menù settimanale generato
+let curDay = (new Date().getDay()+6)%7; // oggi (0=Lun)
+
+function load(){try{return JSON.parse(localStorage.getItem('macroai_profile'))}catch(e){return null}}
+function save(){localStorage.setItem('macroai_profile',JSON.stringify(S))}
+function loadMenu(){try{return JSON.parse(localStorage.getItem('macroai_menu'))}catch(e){return null}}
+function saveMenu(){localStorage.setItem('macroai_menu',JSON.stringify(MENU))}
+
+/* ---------- UTIL ---------- */
+const kcalFromMacros=(p,c,f)=>Math.round(p*4+c*4+f*9);
+const round5=n=>Math.max(0,Math.round(n/5)*5);
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),1900)}
+function go(sc){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sc-'+sc).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.sc===sc));
+  document.getElementById('content')&&document.querySelector('.content').scrollTo(0,0);
+  if(sc==='menu')renderMenu();
+  if(sc==='shop')renderShop();
+  if(sc==='recipes')renderRecipes();
+  if(sc==='settings')renderSettings();
+}
+function openModal(html){document.getElementById('modal').innerHTML='<div class="grab"></div>'+html;document.getElementById('modalBg').classList.add('show')}
+function closeModal(){document.getElementById('modalBg').classList.remove('show')}
+
+/* ============================================================
+   ONBOARDING
+   ============================================================ */
+let ob = {step:0, data:null};
+const OB_TOTAL = 9;
+
+function startOnboarding(existing){
+  ob.step=0;
+  ob.data = existing ? JSON.parse(JSON.stringify(existing)) : {
+    name:'', trainingDays:3, twoMenus:false,
+    trainingList:[0,2,4],
+    macros:{ train:{p:160,c:220,f:60}, rest:{p:160,c:160,f:60} },
+    specialDays:[],
+    meals:4, mealNames:[],
+    cheat:{enabled:false, day:5, mealIndex:1, desc:'', p:40,c:80,f:30},
+    allergies:'', dislikes:''
+  };
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sc-onboarding').classList.add('active');
+  document.getElementById('nav').style.display='none';
+  document.getElementById('gearBtn').style.display = existing?'flex':'none';
+  renderOb();
+}
+
+function obProgress(){
+  let h='';for(let i=0;i<OB_TOTAL;i++)h+=`<span class="${i<=ob.step?'done':''}"></span>`;
+  document.getElementById('obProg').innerHTML=h;
+}
+
+function renderOb(){
+  obProgress();
+  const d=ob.data;
+  const steps=[
+    // 0 — nome / benvenuto
+    `<div class="ob-emoji">👋</div><h2>Benvenuto!</h2>
+     <p class="q">Sono il tuo AI coach nutrizionale. Ti faccio qualche domanda <b>solo la prima volta</b> — potrai cambiare tutto dalle impostazioni ⚙️. Come ti chiami?</p>
+     <label class="fld"><input type="text" id="ob_name" placeholder="Il tuo nome" value="${d.name||''}"></label>`,
+
+    // 1 — allenamenti + due menù
+    `<div class="ob-emoji">🏋️</div><h2>Allenamenti</h2>
+     <p class="q">Quante volte ti alleni a settimana? Vuoi due menù diversi (giorno di allenamento / riposo)?</p>
+     <label class="fld"><span class="lab">Allenamenti / settimana</span>
+       <div class="stepper"><button onclick="obStep('trainingDays',-1)">−</button><div class="val" id="ob_td">${d.trainingDays}</div><button onclick="obStep('trainingDays',1)">+</button></div>
+     </label>
+     <div class="toggle"><span class="tlab">Due menù distinti (allenamento / riposo)</span>
+       <div class="sw ${d.twoMenus?'on':''}" id="ob_two" onclick="obToggleTwo()"></div></div>
+     <div id="ob_traindays" style="${d.twoMenus?'':'display:none'}">
+       <span class="lab" style="font-size:13px;font-weight:600;display:block;margin:6px 0 8px">Seleziona i giorni in cui ti alleni:</span>
+       <div class="chips" id="ob_dayChips">${DAYS.map((dd,i)=>`<div class="chip ${d.trainingList.includes(i)?'on':''}" onclick="obTrainDay(${i})">${DSHORT[i]}</div>`).join('')}</div>
+     </div>`,
+
+    // 2 — macros allenamento
+    `<div class="ob-emoji">💪</div><h2>${d.twoMenus?'Macro — Allenamento':'I tuoi macronutrienti'}</h2>
+     <p class="q">Inserisci i grammi giornalieri. Le <b>calorie le calcolo io</b> automaticamente! 🔢</p>
+     ${macroEditor('train')}`,
+
+    // 3 — macros riposo (solo se two)
+    `<div class="ob-emoji">🛌</div><h2>Macro — Riposo</h2>
+     <p class="q">Nei giorni di riposo di solito si riducono i carboidrati. Imposta i macro per i giorni senza allenamento.</p>
+     ${macroEditor('rest')}`,
+
+    // 4 — giorni speciali (micro diversi)
+    `<div class="ob-emoji">📌</div><h2>Giorni speciali</h2>
+     <p class="q">Hai giorni particolari con macro diversi (es. ricarica, scarico, giorno di gara)? Aggiungili qui — altrimenti salta pure.</p>
+     <div id="ob_specials"></div>
+     <button class="btn ghost sm" style="width:100%;margin-top:6px" onclick="obAddSpecial()">＋ Aggiungi giorno speciale</button>`,
+
+    // 5 — numero pasti
+    `<div class="ob-emoji">🍽️</div><h2>Pasti al giorno</h2>
+     <p class="q">Quanti pasti vuoi fare in una giornata? Potrai sempre aggiungere pasti extra a piacere nel menù.</p>
+     <label class="fld">
+       <div class="stepper"><button onclick="obStep('meals',-1)">−</button><div class="val" id="ob_meals">${d.meals}</div><button onclick="obStep('meals',1)">+</button></div>
+     </label>
+     <div class="note">Con ${d.meals} pasti distribuirò i tuoi macro in modo equilibrato (es. colazione, pranzo, spuntino, cena).</div>`,
+
+    // 6 — pasto sgarro
+    `<div class="ob-emoji">🍕</div><h2>Pasto sgarro</h2>
+     <p class="q">Vuoi inserire un <b>pasto</b> libero (sgarro)? È solo un pasto, non un giorno intero — e i suoi macro vengono comunque conteggiati nel totale.</p>
+     <div class="toggle"><span class="tlab">Inserisci un pasto sgarro</span>
+       <div class="sw ${d.cheat.enabled?'on':''}" id="ob_cheat" onclick="obToggleCheat()"></div></div>
+     <div id="ob_cheatbox" style="${d.cheat.enabled?'':'display:none'}">
+       <label class="fld"><span class="lab">In quale giorno?</span>
+         <select id="ob_cheatday">${DAYS.map((dd,i)=>`<option value="${i}" ${d.cheat.day===i?'selected':''}>${dd}</option>`).join('')}</select></label>
+       <label class="fld"><span class="lab">In quale pasto?</span>
+         <select id="ob_cheatmeal"></select></label>
+       <label class="fld"><span class="lab">In cosa consiste? <span class="hint">(es. pizza margherita, gelato…)</span></span>
+         <input type="text" id="ob_cheatdesc" placeholder="Descrivi il tuo sgarro" value="${d.cheat.desc||''}"></label>
+       <span class="lab" style="font-size:13px;font-weight:600;display:block;margin-bottom:8px">Macro stimati dello sgarro (li conteggio nel totale):</span>
+       <div class="row" style="gap:8px">
+         <label class="fld" style="flex:1"><span class="lab" style="color:var(--pro)">Pro</span><input type="number" id="ob_chp" value="${d.cheat.p}"></label>
+         <label class="fld" style="flex:1"><span class="lab" style="color:var(--car)">Carbo</span><input type="number" id="ob_chc" value="${d.cheat.c}"></label>
+         <label class="fld" style="flex:1"><span class="lab" style="color:var(--fat)">Grassi</span><input type="number" id="ob_chf" value="${d.cheat.f}"></label>
+       </div>
+     </div>`,
+
+    // 7 — allergie
+    `<div class="ob-emoji">⚠️</div><h2>Allergie e intolleranze</h2>
+     <p class="q">Scrivi <b>liberamente</b> le tue allergie o intolleranze. Non userò mai questi alimenti nel menù.</p>
+     <label class="fld"><textarea id="ob_alg" placeholder="Es: lattosio, frutta a guscio, glutine… oppure scrivi liberamente">${d.allergies||''}</textarea></label>
+     <div class="divlbl">oppure seleziona</div>
+     <div class="chips" id="ob_algChips">${['glutine','lattosio','uova','pesce','crostacei','frutta a guscio','soia','arachidi'].map(a=>`<div class="chip" onclick="obToggleTag('ob_alg',this,'${a}')">${a}</div>`).join('')}</div>`,
+
+    // 8 — non graditi
+    `<div class="ob-emoji">🙅</div><h2>Cosa non ti piace?</h2>
+     <p class="q">Scrivi <b>liberamente</b> gli alimenti che non vuoi vedere nel menù. Li escluderò del tutto.</p>
+     <label class="fld"><textarea id="ob_dis" placeholder="Es: non mi piace il pesce, il tofu, i broccoli…">${d.dislikes||''}</textarea></label>
+     <div class="note">💡 Potrai sempre dire al Coach “non mi piace X” in qualsiasi momento e rigenererò il menù.</div>`
+  ];
+
+  const buttons = `
+    <div class="row" style="margin-top:24px">
+      ${ob.step>0?'<button class="btn sec" onclick="obBack()">Indietro</button>':''}
+      <button class="btn" onclick="obNext()">${ob.step===OB_TOTAL-1?'🚀 Genera il mio menù':'Avanti'}</button>
+    </div>`;
+
+  document.getElementById('obSteps').innerHTML = `<div class="ob-step active">${steps[ob.step]}${buttons}</div>`;
+  if(ob.step===6) fillCheatMeals();
+  if(ob.step===4) renderSpecials();
+}
+
+function macroEditor(key){
+  const m=ob.data.macros[key];
+  return `<div class="row" style="gap:8px;margin-bottom:14px">
+      <label class="fld" style="flex:1;margin:0"><span class="lab" style="color:var(--pro)">Proteine (g)</span><input type="number" id="ob_${key}_p" value="${m.p}" oninput="obMacroPreview('${key}')"></label>
+      <label class="fld" style="flex:1;margin:0"><span class="lab" style="color:var(--car)">Carbo (g)</span><input type="number" id="ob_${key}_c" value="${m.c}" oninput="obMacroPreview('${key}')"></label>
+      <label class="fld" style="flex:1;margin:0"><span class="lab" style="color:var(--fat)">Grassi (g)</span><input type="number" id="ob_${key}_f" value="${m.f}" oninput="obMacroPreview('${key}')"></label>
+    </div>
+    <div class="macro-row"><div class="mp cal"><div class="v" id="ob_${key}_kcal">${kcalFromMacros(m.p,m.c,m.f)}</div><div class="l">kcal calcolate</div></div>
+      <div class="mp pro"><div class="v">${m.p}</div><div class="l">Pro</div></div>
+      <div class="mp car"><div class="v">${m.c}</div><div class="l">Carbo</div></div>
+      <div class="mp fat"><div class="v">${m.f}</div><div class="l">Grassi</div></div></div>`;
+}
+function obMacroPreview(key){
+  const p=+document.getElementById('ob_'+key+'_p').value||0;
+  const c=+document.getElementById('ob_'+key+'_c').value||0;
+  const f=+document.getElementById('ob_'+key+'_f').value||0;
+  document.getElementById('ob_'+key+'_kcal').textContent=kcalFromMacros(p,c,f);
+}
+function obStep(field,delta){
+  ob.data[field]=Math.max(field==='meals'?2:1,Math.min(field==='meals'?7:7,ob.data[field]+delta));
+  if(field==='trainingDays')document.getElementById('ob_td').textContent=ob.data[field];
+  if(field==='meals'){document.getElementById('ob_meals').textContent=ob.data[field];renderOb();}
+}
+function obToggleTwo(){ob.data.twoMenus=!ob.data.twoMenus;document.getElementById('ob_two').classList.toggle('on');document.getElementById('ob_traindays').style.display=ob.data.twoMenus?'block':'none';}
+function obTrainDay(i){const L=ob.data.trainingList;const idx=L.indexOf(i);if(idx>=0)L.splice(idx,1);else L.push(i);document.querySelectorAll('#ob_dayChips .chip')[i].classList.toggle('on');}
+function obToggleCheat(){ob.data.cheat.enabled=!ob.data.cheat.enabled;document.getElementById('ob_cheat').classList.toggle('on');document.getElementById('ob_cheatbox').style.display=ob.data.cheat.enabled?'block':'none';if(ob.data.cheat.enabled)fillCheatMeals();}
+function obToggleTag(taid,el,val){const ta=document.getElementById(taid);el.classList.toggle('on');let parts=ta.value.split(',').map(s=>s.trim()).filter(Boolean);if(el.classList.contains('on')){if(!parts.includes(val))parts.push(val);}else{parts=parts.filter(p=>p!==val);}ta.value=parts.join(', ');}
+function fillCheatMeals(){
+  const sel=document.getElementById('ob_cheatmeal');if(!sel)return;
+  const names=mealNamesFor(ob.data.meals);
+  sel.innerHTML=names.map((n,i)=>`<option value="${i}" ${ob.data.cheat.mealIndex===i?'selected':''}>${n}</option>`).join('');
+}
+function obAddSpecial(){ob.data.specialDays.push({day:6,name:'Ricarica',p:160,c:300,f:50});renderSpecials();}
+function obRemoveSpecial(i){ob.data.specialDays.splice(i,1);renderSpecials();}
+function renderSpecials(){
+  const box=document.getElementById('ob_specials');if(!box)return;
+  if(!ob.data.specialDays.length){box.innerHTML='<div class="note">Nessun giorno speciale. Puoi saltare questo passaggio.</div>';return;}
+  box.innerHTML=ob.data.specialDays.map((sp,i)=>`
+    <div class="card" style="padding:13px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <input type="text" value="${sp.name}" oninput="ob.data.specialDays[${i}].name=this.value" style="width:55%;padding:8px 10px" placeholder="Nome">
+        <button class="fedit" onclick="obRemoveSpecial(${i})">🗑️</button>
+      </div>
+      <label class="fld" style="margin-bottom:10px"><span class="lab">Giorno</span>
+        <select onchange="ob.data.specialDays[${i}].day=+this.value">${DAYS.map((dd,j)=>`<option value="${j}" ${sp.day===j?'selected':''}>${dd}</option>`).join('')}</select></label>
+      <div class="row" style="gap:8px">
+        <label class="fld" style="flex:1;margin:0"><span class="lab" style="color:var(--pro)">Pro</span><input type="number" value="${sp.p}" oninput="ob.data.specialDays[${i}].p=+this.value"></label>
+        <label class="fld" style="flex:1;margin:0"><span class="lab" style="color:var(--car)">Carbo</span><input type="number" value="${sp.c}" oninput="ob.data.specialDays[${i}].c=+this.value"></label>
+        <label class="fld" style="flex:1;margin:0"><span class="lab" style="color:var(--fat)">Grassi</span><input type="number" value="${sp.f}" oninput="ob.data.specialDays[${i}].f=+this.value"></label>
+      </div>
+    </div>`).join('');
+}
+function obSnapshot(){
+  const d=ob.data;
+  if(ob.step===0)d.name=(document.getElementById('ob_name').value||'').trim();
+  if(ob.step===2){d.macros.train={p:+document.getElementById('ob_train_p').value||0,c:+document.getElementById('ob_train_c').value||0,f:+document.getElementById('ob_train_f').value||0};}
+  if(ob.step===3){d.macros.rest={p:+document.getElementById('ob_rest_p').value||0,c:+document.getElementById('ob_rest_c').value||0,f:+document.getElementById('ob_rest_f').value||0};}
+  if(ob.step===6&&d.cheat.enabled){
+    d.cheat.day=+document.getElementById('ob_cheatday').value;
+    d.cheat.mealIndex=+document.getElementById('ob_cheatmeal').value;
+    d.cheat.desc=document.getElementById('ob_cheatdesc').value.trim();
+    d.cheat.p=+document.getElementById('ob_chp').value||0;
+    d.cheat.c=+document.getElementById('ob_chc').value||0;
+    d.cheat.f=+document.getElementById('ob_chf').value||0;
+  }
+  if(ob.step===7)d.allergies=document.getElementById('ob_alg').value.trim();
+  if(ob.step===8)d.dislikes=document.getElementById('ob_dis').value.trim();
+}
+function obNext(){
+  obSnapshot();
+  // salta step 3 (riposo) se non two-menu
+  let next=ob.step+1;
+  if(ob.step===2 && !ob.data.twoMenus){ ob.data.macros.rest={...ob.data.macros.train}; next=4; }
+  if(next>=OB_TOTAL){ finishOnboarding(); return; }
+  ob.step=next; renderOb(); document.querySelector('.content').scrollTo(0,0);
+}
+function obBack(){
+  obSnapshot();
+  let prev=ob.step-1;
+  if(ob.step===4 && !ob.data.twoMenus) prev=2;
+  ob.step=Math.max(0,prev); renderOb();
+}
+function finishOnboarding(){
+  ob.data.mealNames=mealNamesFor(ob.data.meals);
+  S=ob.data;
+  if(!S.name)S.name='Atleta';
+  save();
+  document.getElementById('nav').style.display='flex';
+  document.getElementById('gearBtn').style.display='flex';
+  generateWeek();
+  go('menu');
+  initCoach(true);
+  toast('Menù generato! 🎉');
+}
+
+function mealNamesFor(n){
+  const map={2:['Pranzo','Cena'],3:['Colazione','Pranzo','Cena'],4:['Colazione','Pranzo','Spuntino','Cena'],
+    5:['Colazione','Spuntino','Pranzo','Spuntino','Cena'],6:['Colazione','Spuntino','Pranzo','Spuntino','Cena','Spuntino serale'],
+    7:['Colazione','Spuntino','Pranzo','Spuntino','Merenda','Cena','Spuntino serale']};
+  return map[n]||Array.from({length:n},(_,i)=>'Pasto '+(i+1));
+}
+
+/* ============================================================
+   GENERATORE MENÙ  (rispetta i macro)
+   ============================================================ */
+function dayTarget(dayIdx){
+  const sp=S.specialDays.find(s=>s.day===dayIdx);
+  if(sp)return {p:sp.p,c:sp.c,f:sp.f,type:'special',label:sp.name};
+  const isTrain = S.twoMenus ? S.trainingList.includes(dayIdx) : true;
+  const m=isTrain?S.macros.train:S.macros.rest;
+  return {p:m.p,c:m.c,f:m.f,type:isTrain?'train':'rest',label:isTrain?'Allenamento':'Riposo'};
+}
+
+// alimenti consentiti (no allergeni, no sgraditi)
+function allowed(cat,dayIdx,seed){
+  const algText=(S.allergies||'').toLowerCase();
+  const disText=(S.dislikes||'').toLowerCase();
+  return DB.filter(f=>f.cat===cat).filter(f=>{
+    // allergeni
+    for(const a of f.alg){ if(algText.includes(a.toLowerCase().split(' ')[0]))return false; }
+    if(algText.includes('lattosio')&&f.cat==='dairy')return false;
+    if(algText.includes('glutine')&&f.alg.includes('glutine'))return false;
+    // sgraditi: match parola del nome
+    const words=f.n.toLowerCase().split(/[ ’']/);
+    for(const w of words){ if(w.length>3 && disText.includes(w))return false; }
+    if(disText.includes(f.n.toLowerCase()))return false;
+    return true;
+  });
+}
+function pick(arr,seed){ return arr.length?arr[seed%arr.length]:null; }
+
+// distribuisci macro del giorno tra i pasti
+function mealSplit(meals,cheatIdx){
+  // pesi tipici per ruolo
+  const base={2:[.45,.55],3:[.3,.4,.3],4:[.25,.35,.12,.28],5:[.22,.1,.32,.1,.26],6:[.2,.1,.28,.1,.22,.1],7:[.18,.08,.26,.1,.1,.2,.08]};
+  let w=base[meals]||Array.from({length:meals},()=>1/meals);
+  return w;
+}
+
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+
+function buildMeal(target,dayIdx,mealIdx,role){
+  // target {p,c,f}; costruisce alimenti e quantità per avvicinarsi
+  const seed=dayIdx*7+mealIdx;
+  const isBk = role==='Colazione';
+  let fixed=[];
+  // VERDURA fissa (no colazione) / FRUTTA a colazione
+  if(!isBk){
+    const veg=pick(allowed('veg'),seed+dayIdx);
+    if(veg)fixed.push({food:veg.n,g:150});
+  } else {
+    const fruit=pick(allowed('fruit'),seed);
+    if(fruit)fixed.push({food:fruit.n,g:120});
+  }
+  // contributo macro degli alimenti fissi
+  const fixedMac=()=>{let b={p:0,c:0,f:0};fixed.forEach(x=>{const ff=findFood(x.food);b.p+=ff.p*x.g/100;b.c+=ff.c*x.g/100;b.f+=ff.f*x.g/100;});return b;};
+
+  // PROTEINA: scelgo varietà ma evito proteine troppo grasse se il budget di grassi è basso
+  let pros=allowed('pro').concat(allowed('dairy'));
+  if(isBk){const bp=pros.filter(f=>f.tags&&f.tags.includes('bk'));if(bp.length)pros=bp;}
+  let pro=pickLeanProtein(pros,target,fixedMac(),seed+1);
+  // CARBO
+  let carbs=allowed('carb');
+  if(isBk){const bc=carbs.filter(f=>f.tags&&f.tags.includes('bk'));if(bc.length)carbs=bc;}
+  const carb=pick(carbs,seed+3);
+  // GRASSO
+  let fats=allowed('fat');
+  if(isBk){const bf=fats.filter(f=>f.tags&&f.tags.includes('bk'));if(bf.length)fats=bf;}
+  const fat=pick(fats,seed+2);
+
+  // risoluzione iterativa: ogni macro è dominato da una fonte, in poche iterazioni converge
+  let gP=120,gC=120,gF=8;
+  for(let it=0;it<6;it++){
+    const b=fixedMac();
+    if(pro){const cP=carb?carb.p*gC/100:0,fP=fat?fat.p*gF/100:0;gP=clamp(round5((target.p-b.p-cP-fP)/(pro.p/100||1)),20,400);}
+    if(carb){const pC=pro?pro.c*gP/100:0,fC=fat?fat.c*gF/100:0;gC=clamp(round5((target.c-b.c-pC-fC)/(carb.c/100||1)),10,400);}
+    if(fat){const pF=pro?pro.f*gP/100:0,cF=carb?carb.f*gC/100:0;const need=target.f-b.f-pF-cF;gF=clamp(round5(need/(fat.f/100||1)),need>3?5:0,fat.f>=90?25:90);}
+  }
+  let foods=fixed.map(x=>({food:x.food,g:x.g,locked:false}));
+  if(pro)foods.push({food:pro.n,g:gP,locked:false});
+  if(carb)foods.push({food:carb.n,g:gC,locked:false});
+  if(fat&&gF>0)foods.push({food:fat.n,g:gF,locked:false});
+  return {name:role,foods,cheat:false};
+}
+
+// sceglie una proteina variata ma compatibile col budget di grassi del pasto
+function pickLeanProtein(list,target,base,seed){
+  if(!list.length)return null;
+  const budget=Math.max(6,(target.f-base.f)*0.7); // grasso che la proteina può "spendere"
+  const n=list.length;
+  for(let k=0;k<n;k++){
+    const cand=list[(seed+k)%n];
+    const g=cand.p>0?(target.p-base.p)/(cand.p/100):0;
+    if((cand.f*g/100)<=budget)return cand; // prima candidata abbastanza magra
+  }
+  // nessuna rientra: prendo la più magra in assoluto
+  return list.slice().sort((a,b)=>a.f-b.f)[0];
+}
+
+function generateWeek(){
+  MENU={days:[]};
+  const mealW=mealSplit(S.meals);
+  const names=S.mealNames&&S.mealNames.length?S.mealNames:mealNamesFor(S.meals);
+  for(let d=0;d<7;d++){
+    const tgt=dayTarget(d);
+    let dayMeals=[];
+    // togli macro sgarro dal target se è in questo giorno
+    let eff={p:tgt.p,c:tgt.c,f:tgt.f};
+    const hasCheat = S.cheat.enabled && S.cheat.day===d;
+    if(hasCheat){ eff={p:Math.max(0,tgt.p-S.cheat.p),c:Math.max(0,tgt.c-S.cheat.c),f:Math.max(0,tgt.f-S.cheat.f)}; }
+    const otherMeals = hasCheat? S.meals-1 : S.meals;
+    // ridistribuisci pesi sui pasti non-sgarro
+    let wsum=0; mealW.forEach((w,i)=>{ if(!(hasCheat&&i===S.cheat.mealIndex))wsum+=w; });
+    for(let m=0;m<S.meals;m++){
+      if(hasCheat && m===S.cheat.mealIndex){
+        dayMeals.push({name:names[m],cheat:true,desc:S.cheat.desc||'Pasto libero',
+          foods:[{food:'__cheat__',label:S.cheat.desc||'Pasto libero (sgarro)',g:null,p:S.cheat.p,c:S.cheat.c,f:S.cheat.f,locked:true}]});
+        continue;
+      }
+      const w=mealW[m]/wsum;
+      const mt={p:eff.p*w,c:eff.c*w,f:eff.f*w};
+      dayMeals.push(buildMeal(mt,d,m,names[m]));
+    }
+    MENU.days.push({meals:dayMeals});
+  }
+  saveMenu();
+}
+
+/* calcola macro di un alimento riga */
+function foodMacros(item){
+  if(item.food==='__cheat__'){return {k:kcalFromMacros(item.p,item.c,item.f),p:item.p,c:item.c,f:item.f};}
+  const ff=findFood(item.food);if(!ff)return {k:0,p:0,c:0,f:0};
+  const g=item.g||0;
+  return {k:Math.round(ff.k*g/100),p:+(ff.p*g/100).toFixed(1),c:+(ff.c*g/100).toFixed(1),f:+(ff.f*g/100).toFixed(1)};
+}
+function mealMacros(meal){let t={k:0,p:0,c:0,f:0};meal.foods.forEach(it=>{const m=foodMacros(it);t.k+=m.k;t.p+=m.p;t.c+=m.c;t.f+=m.f;});return {k:Math.round(t.k),p:Math.round(t.p),c:Math.round(t.c),f:Math.round(t.f)};}
+function dayMacros(dayIdx){let t={k:0,p:0,c:0,f:0};MENU.days[dayIdx].meals.forEach(meal=>{const m=mealMacros(meal);t.k+=m.k;t.p+=m.p;t.c+=m.c;t.f+=m.f;});return t;}
+
+/* ============================================================
+   RENDER MENÙ
+   ============================================================ */
+function renderMenu(){
+  if(!MENU){document.getElementById('sc-menu').innerHTML='';return;}
+  const tgt=dayTarget(curDay);
+  const got=dayMacros(curDay);
+  const day=MENU.days[curDay];
+  const tagClass=tgt.type==='rest'?'rest':tgt.type==='special'?'special':'';
+
+  let h=`<div class="daysel">${DAYS.map((dd,i)=>{
+      const t=dayTarget(i);const tr=t.type==='train';
+      return `<div class="dpill ${i===curDay?'on':''}" onclick="curDay=${i};renderMenu()">${tr?'<span class="tdot"></span>':''}<span class="dd">${DSHORT[i]}</span></div>`;
+    }).join('')}</div>`;
+
+  h+=`<div class="daytitle"><h2>${DAYS[curDay]}</h2><span class="daytag ${tagClass}">${tgt.label}</span></div>`;
+
+  // target progress
+  h+=`<div class="tgt">
+    <div class="tgt-h"><span class="tt">Obiettivo giornaliero</span><span class="tt" style="color:var(--cal);font-weight:700">${got.k} / ${kcalFromMacros(tgt.p,tgt.c,tgt.f)} kcal</span></div>
+    ${macroBar('Proteine',got.p,tgt.p,'var(--pro)')}
+    ${macroBar('Carboidrati',got.c,tgt.c,'var(--car)')}
+    ${macroBar('Grassi',got.f,tgt.f,'var(--fat)')}
+  </div>`;
+
+  // meals
+  day.meals.forEach((meal,mi)=>{
+    const mm=mealMacros(meal);
+    h+=`<div class="meal ${meal.cheat?'cheat':''}">
+      <div class="meal-h">
+        <span class="mt">${mealEmoji(meal.name)} ${meal.name} ${meal.cheat?'<span class="cheatbadge">SGARRO</span>':''}</span>
+        <span class="mc">${mm.k} kcal · P${mm.p} C${mm.c} G${mm.f}</span>
+      </div>`;
+    meal.foods.forEach((it,fi)=>{
+      const m=foodMacros(it);
+      if(it.food==='__cheat__'){
+        h+=`<div class="food"><div class="fi"><div class="fn">🍕 ${it.label}</div>
+          <div class="fg">Pasto libero · conteggiato nei macro</div>
+          <div class="fmac"><span class="k">${m.k}kcal</span><span class="p">P ${m.p}</span><span class="c">C ${m.c}</span><span class="f">G ${m.f}</span></div></div>
+          <button class="fedit" onclick="editCheat(${curDay},${mi})">✏️</button></div>`;
+      } else {
+        h+=`<div class="food"><div class="fi"><div class="fn">${it.food}</div>
+          <div class="fg">${it.g} g a crudo</div>
+          <div class="fmac"><span class="k">${m.k}kcal</span><span class="p">P ${m.p}</span><span class="c">C ${m.c}</span><span class="f">G ${m.f}</span></div></div>
+          <button class="fedit" onclick="editFood(${curDay},${mi},${fi})">✏️</button></div>`;
+      }
+    });
+    h+=`<div class="meal-foot">
+        <button onclick="addFood(${curDay},${mi})">＋ Aggiungi alimento</button>
+        ${!meal.cheat?`<button onclick="regenMeal(${curDay},${mi})">🔄 Rigenera pasto</button>`:''}
+      </div></div>`;
+  });
+
+  h+=`<button class="btn ghost" style="margin-bottom:10px" onclick="addMeal(${curDay})">＋ Aggiungi pasto extra</button>`;
+  h+=`<div class="row" style="margin-bottom:10px">
+      <button class="btn sec" onclick="regenDay(${curDay})">🔄 Rigenera giorno</button>
+      <button class="btn sec" onclick="regenAll()">🔁 Rigenera settimana</button>
+    </div>`;
+  h+=`<div class="row" style="margin-bottom:24px">
+      <button class="btn" onclick="printMenu()">🖨️ Stampa</button>
+      <button class="btn sec" onclick="downloadMenu()">⬇️ Scarica</button>
+    </div>`;
+
+  document.getElementById('sc-menu').innerHTML=h;
+}
+function macroBar(lbl,got,tgt,col){
+  const pct=tgt>0?Math.min(100,Math.round(got/tgt*100)):0;
+  const over=got>tgt*1.08;
+  return `<div class="barlabel"><span>${lbl}</span><b style="color:${col}">${Math.round(got)} / ${tgt} g</b></div>
+    <div class="bar"><i style="width:${pct}%;background:${over?'var(--danger)':col}"></i></div>`;
+}
+function mealEmoji(n){n=n.toLowerCase();if(n.includes('colaz'))return'☀️';if(n.includes('pranzo'))return'🍝';if(n.includes('cena'))return'🌙';if(n.includes('spunt')||n.includes('meren'))return'🍎';return'🍽️';}
+
+/* ============================================================
+   EDITING ALIMENTI
+   ============================================================ */
+function editFood(d,mi,fi){
+  const it=MENU.days[d].meals[mi].foods[fi];
+  const ff=findFood(it.food);
+  const m=foodMacros(it);
+  // alternative stessa categoria
+  const alts=allowed(ff.cat).filter(a=>a.n!==it.food).slice(0,6);
+  let h=`<h3>${it.food}</h3><div class="msub">${it.g} g a crudo · ${m.k}kcal · P${m.p} C${m.c} G${m.f}</div>`;
+  h+=`<label class="fld"><span class="lab">Quantità (g a crudo) <span class="hint">— se la cambi, ricalcolo le kcal</span></span>
+      <div class="row" style="gap:8px"><input type="number" id="ed_g" value="${it.g}"><button class="btn sm" style="padding:13px 16px" onclick="setQty(${d},${mi},${fi})">OK</button></div></label>`;
+  h+=`<div class="divlbl">alternative consigliate</div><div class="altlist">`;
+  alts.forEach(a=>{
+    // mantieni stessi macro: scala la quantità per pareggiare le kcal
+    const newG=round5(it.g*(ff.k)/(a.k||1));
+    h+=`<div class="alt"><div><div class="an">${a.n}</div><div class="am">~${newG} g · ${Math.round(a.k*newG/100)}kcal · P${(a.p*newG/100).toFixed(0)} C${(a.c*newG/100).toFixed(0)} G${(a.f*newG/100).toFixed(0)}</div></div>
+      <button onclick="swapFood(${d},${mi},${fi},'${a.n.replace(/'/g,"\\'")}')">Sostituisci</button></div>`;
+  });
+  h+=`</div>`;
+  h+=`<div class="divlbl">non ti va nessuna?</div>
+    <label class="fld"><span class="lab">Cerca un altro prodotto</span>
+      <input type="text" id="ed_search" placeholder="Scrivi un alimento…" oninput="searchAlt(${d},${mi},${fi},this.value)"></label>
+    <div id="ed_results"></div>
+    <div class="note">Quando sostituisci o cambi quantità, <b>riadatto automaticamente gli altri alimenti del pasto</b> per centrare i tuoi macro giornalieri.</div>`;
+  h+=`<button class="btn danger" style="margin-top:14px" onclick="removeFood(${d},${mi},${fi})">🗑️ Rimuovi alimento</button>`;
+  openModal(h);
+}
+function setQty(d,mi,fi){
+  const g=+document.getElementById('ed_g').value||0;
+  MENU.days[d].meals[mi].foods[fi].g=g;
+  MENU.days[d].meals[mi].foods[fi].locked=true;
+  rebalanceMeal(d,mi,fi);
+  saveMenu();closeModal();renderMenu();toast('Quantità aggiornata · pasto riadattato');
+}
+function swapFood(d,mi,fi,name){
+  const old=MENU.days[d].meals[mi].foods[fi];
+  const oldM=foodMacros(old);const nf=findFood(name);
+  // mantieni le kcal simili
+  let g=round5(old.g*(findFood(old.food).k)/(nf.k||1));
+  MENU.days[d].meals[mi].foods[fi]={food:name,g,locked:false};
+  rebalanceMeal(d,mi,fi);
+  saveMenu();closeModal();renderMenu();toast('Sostituito con '+name);
+}
+function searchAlt(d,mi,fi,q){
+  q=q.trim().toLowerCase();const box=document.getElementById('ed_results');
+  if(q.length<2){box.innerHTML='';return;}
+  const res=DB.filter(f=>f.n.toLowerCase().includes(q)).slice(0,6);
+  if(!res.length){box.innerHTML='<div class="note">Nessun alimento trovato. Prova con un altro nome.</div>';return;}
+  box.innerHTML='<div class="altlist">'+res.map(a=>`<div class="alt"><div><div class="an">${a.n}</div><div class="am">${a.k}kcal/100g · P${a.p} C${a.c} G${a.f}</div></div>
+    <button onclick="swapFood(${d},${mi},${fi},'${a.n.replace(/'/g,"\\'")}')">Scegli</button></div>`).join('')+'</div>';
+}
+function removeFood(d,mi,fi){
+  MENU.days[d].meals[mi].foods.splice(fi,1);
+  saveMenu();closeModal();renderMenu();toast('Alimento rimosso');
+}
+function addFood(d,mi){
+  let h=`<h3>Aggiungi alimento</h3><div class="msub">Scegli un alimento da aggiungere a questo pasto</div>
+    <label class="fld"><input type="text" id="af_search" placeholder="Cerca alimento…" oninput="afSearch(${d},${mi},this.value)" autofocus></label>
+    <div id="af_results"></div>`;
+  openModal(h);afSearch(d,mi,'');
+}
+function afSearch(d,mi,q){
+  q=q.trim().toLowerCase();
+  let res=q.length<1?DB.slice(0,40):DB.filter(f=>f.n.toLowerCase().includes(q));
+  res=res.slice(0,30);
+  document.getElementById('af_results').innerHTML='<div class="altlist">'+res.map(a=>`<div class="alt"><div><div class="an">${a.n}</div><div class="am">${a.k}kcal/100g · P${a.p} C${a.c} G${a.f}</div></div>
+    <button onclick="doAddFood(${d},${mi},'${a.n.replace(/'/g,"\\'")}')">＋</button></div>`).join('')+'</div>';
+}
+function doAddFood(d,mi,name){
+  const nf=findFood(name);
+  MENU.days[d].meals[mi].foods.push({food:name,g:nf.cat==='fat'&&nf.f>=90?10:nf.cat==='veg'?100:80,locked:true});
+  saveMenu();closeModal();renderMenu();toast(name+' aggiunto');
+}
+function addMeal(d){
+  const n=MENU.days[d].meals.length+1;
+  MENU.days[d].meals.push({name:'Pasto extra',foods:[],cheat:false});
+  saveMenu();renderMenu();toast('Pasto extra aggiunto');
+}
+function editCheat(d,mi){
+  const meal=MENU.days[d].meals[mi];const it=meal.foods[0];
+  let h=`<h3>Pasto sgarro 🍕</h3><div class="msub">Solo un pasto libero — i macro vengono conteggiati nel totale</div>
+    <label class="fld"><span class="lab">In cosa consiste</span><input type="text" id="ch_desc" value="${it.label||''}" placeholder="es. pizza margherita"></label>
+    <div class="row" style="gap:8px">
+      <label class="fld" style="flex:1"><span class="lab" style="color:var(--pro)">Pro</span><input type="number" id="ch_p" value="${it.p}"></label>
+      <label class="fld" style="flex:1"><span class="lab" style="color:var(--car)">Carbo</span><input type="number" id="ch_c" value="${it.c}"></label>
+      <label class="fld" style="flex:1"><span class="lab" style="color:var(--fat)">Grassi</span><input type="number" id="ch_f" value="${it.f}"></label>
+    </div>
+    <div class="note">kcal calcolate automaticamente dai macro.</div>
+    <button class="btn" style="margin-top:14px" onclick="saveCheat(${d},${mi})">Salva</button>`;
+  openModal(h);
+}
+function saveCheat(d,mi){
+  const it=MENU.days[d].meals[mi].foods[0];
+  it.label=document.getElementById('ch_desc').value||'Pasto libero';
+  it.p=+document.getElementById('ch_p').value||0;
+  it.c=+document.getElementById('ch_c').value||0;
+  it.f=+document.getElementById('ch_f').value||0;
+  saveMenu();closeModal();renderMenu();toast('Sgarro aggiornato');
+}
+
+/* riadatta gli alimenti NON bloccati del pasto per centrare il target */
+function rebalanceMeal(d,mi,changedFi){
+  const meal=MENU.days[d].meals[mi];if(meal.cheat)return;
+  // target del pasto = quota del giorno
+  const tgt=dayTarget(d);
+  const hasCheat=S.cheat.enabled&&S.cheat.day===d;
+  let eff={p:tgt.p,c:tgt.c,f:tgt.f};
+  if(hasCheat){eff={p:tgt.p-S.cheat.p,c:tgt.c-S.cheat.c,f:tgt.f-S.cheat.f};}
+  const mealW=mealSplit(S.meals);
+  let wsum=0;mealW.forEach((w,i)=>{if(!(hasCheat&&i===S.cheat.mealIndex))wsum+=w;});
+  const w=(mealW[mi]||1/S.meals)/wsum;
+  let need={p:eff.p*w,c:eff.c*w,f:eff.f*w};
+  // sottrai contributi bloccati
+  meal.foods.forEach((it,i)=>{if(it.locked||i===changedFi){const m=foodMacros(it);need.p-=m.p;need.c-=m.c;need.f-=m.f;}});
+  // distribuisci sul resto per categoria
+  meal.foods.forEach((it,i)=>{
+    if(it.locked||i===changedFi)return;
+    const ff=findFood(it.food);if(!ff)return;
+    let g=it.g;
+    if(ff.cat==='carb'&&ff.c>0)g=round5(Math.max(10,need.c/(ff.c/100)));
+    else if(ff.cat==='pro'&&ff.p>0)g=round5(Math.max(20,need.p/(ff.p/100)));
+    else if(ff.cat==='fat'&&ff.f>0)g=round5(Math.max(5,Math.min(25,need.f/(ff.f/100))));
+    it.g=Math.min(g,450);
+  });
+}
+
+function regenMeal(d,mi){
+  const meal=MENU.days[d].meals[mi];if(meal.cheat)return;
+  const tgt=dayTarget(d);const mealW=mealSplit(S.meals);
+  const hasCheat=S.cheat.enabled&&S.cheat.day===d;
+  let eff={p:tgt.p,c:tgt.c,f:tgt.f};if(hasCheat)eff={p:tgt.p-S.cheat.p,c:tgt.c-S.cheat.c,f:tgt.f-S.cheat.f};
+  let wsum=0;mealW.forEach((w,i)=>{if(!(hasCheat&&i===S.cheat.mealIndex))wsum+=w;});
+  const w=(mealW[mi]||1/S.meals)/wsum;
+  const nm=buildMeal({p:eff.p*w,c:eff.c*w,f:eff.f*w},d,mi+Math.floor(Math.random()*50),meal.name);
+  nm.name=meal.name;MENU.days[d].meals[mi]=nm;
+  saveMenu();renderMenu();toast('Pasto rigenerato 🔄');
+}
+function regenDay(d){
+  const tgt=dayTarget(d);const mealW=mealSplit(S.meals);const names=S.mealNames;
+  const hasCheat=S.cheat.enabled&&S.cheat.day===d;
+  let eff={p:tgt.p,c:tgt.c,f:tgt.f};if(hasCheat)eff={p:tgt.p-S.cheat.p,c:tgt.c-S.cheat.c,f:tgt.f-S.cheat.f};
+  let wsum=0;mealW.forEach((w,i)=>{if(!(hasCheat&&i===S.cheat.mealIndex))wsum+=w;});
+  let meals=[];
+  for(let m=0;m<S.meals;m++){
+    if(hasCheat&&m===S.cheat.mealIndex){meals.push({name:names[m],cheat:true,desc:S.cheat.desc,foods:[{food:'__cheat__',label:S.cheat.desc||'Pasto libero',g:null,p:S.cheat.p,c:S.cheat.c,f:S.cheat.f,locked:true}]});continue;}
+    const w=mealW[m]/wsum;
+    meals.push(buildMeal({p:eff.p*w,c:eff.c*w,f:eff.f*w},d+Math.floor(Math.random()*99),m,names[m]));
+  }
+  MENU.days[d].meals=meals;saveMenu();renderMenu();toast(DAYS[d]+' rigenerato');
+}
+function regenAll(){generateWeek();renderMenu();toast('Settimana rigenerata 🔁');}
+
+/* ============================================================
+   STAMPA & DOWNLOAD  (fix tasto stampa)
+   ============================================================ */
+function menuText(){
+  let t=`MENÙ SETTIMANALE — ${S.name}\n`;
+  t+=`Generato il ${new Date().toLocaleDateString('it-IT')}\n`;
+  t+=`Pasti/giorno: ${S.meals}  ·  Allenamenti/sett: ${S.trainingDays}\n`;
+  t+='='.repeat(40)+'\n\n';
+  MENU.days.forEach((day,d)=>{
+    const tgt=dayTarget(d);const got=dayMacros(d);
+    t+=`▶ ${DAYS[d].toUpperCase()} (${tgt.label})\n`;
+    t+=`  Obiettivo: ${kcalFromMacros(tgt.p,tgt.c,tgt.f)}kcal | P${tgt.p} C${tgt.c} G${tgt.f}\n`;
+    t+=`  Totale:    ${got.k}kcal | P${got.p} C${got.c} G${got.f}\n`;
+    day.meals.forEach(meal=>{
+      const mm=mealMacros(meal);
+      t+=`  • ${meal.name}${meal.cheat?' [SGARRO]':''} — ${mm.k}kcal (P${mm.p} C${mm.c} G${mm.f})\n`;
+      meal.foods.forEach(it=>{
+        const m=foodMacros(it);
+        if(it.food==='__cheat__')t+=`      - ${it.label} (pasto libero) — ${m.k}kcal\n`;
+        else t+=`      - ${it.food}: ${it.g}g a crudo — ${m.k}kcal (P${m.p} C${m.c} G${m.f})\n`;
+      });
+    });
+    t+='\n';
+  });
+  return t;
+}
+function menuPrintHTML(){
+  let h=`<h1 style="font-size:22px;margin-bottom:4px">Menù Settimanale — ${S.name}</h1>
+    <p style="color:#555;margin-bottom:16px;font-size:12px">Generato il ${new Date().toLocaleDateString('it-IT')} · ${S.meals} pasti/giorno · ${S.trainingDays} allenamenti/sett</p>`;
+  MENU.days.forEach((day,d)=>{
+    const tgt=dayTarget(d);const got=dayMacros(d);
+    h+=`<div style="margin-bottom:16px;border:1px solid #ddd;border-radius:8px;padding:10px;page-break-inside:avoid">
+      <div style="display:flex;justify-content:space-between;border-bottom:2px solid #333;padding-bottom:5px;margin-bottom:8px">
+        <b style="font-size:15px">${DAYS[d]} <span style="font-weight:normal;color:#777;font-size:11px">(${tgt.label})</span></b>
+        <span style="font-size:11px;color:#555">Obiettivo ${kcalFromMacros(tgt.p,tgt.c,tgt.f)}kcal · P${tgt.p} C${tgt.c} G${tgt.f} → Tot ${got.k}kcal P${got.p} C${got.c} G${got.f}</span>
+      </div>`;
+    day.meals.forEach(meal=>{
+      const mm=mealMacros(meal);
+      h+=`<div style="margin-bottom:6px"><b style="font-size:12.5px">${meal.name}${meal.cheat?' 🍕 (sgarro)':''}</b> <span style="color:#888;font-size:11px">— ${mm.k}kcal (P${mm.p} C${mm.c} G${mm.f})</span><ul style="margin:3px 0 3px 18px;font-size:12px">`;
+      meal.foods.forEach(it=>{const m=foodMacros(it);
+        if(it.food==='__cheat__')h+=`<li>${it.label} <i style="color:#888">(pasto libero, ${m.k}kcal)</i></li>`;
+        else h+=`<li><b>${it.food}</b> — ${it.g}g a crudo <span style="color:#888">(${m.k}kcal · P${m.p} C${m.c} G${m.f})</span></li>`;});
+      h+=`</ul></div>`;
+    });
+    h+=`</div>`;
+  });
+  return h;
+}
+function printMenu(){
+  if(!MENU){toast('Genera prima il menù');return;}
+  document.getElementById('printArea').innerHTML=menuPrintHTML();
+  // dà tempo al layout
+  setTimeout(()=>{ window.print(); },120);
+}
+function downloadMenu(){
+  if(!MENU){toast('Genera prima il menù');return;}
+  // prova file .txt; fallback: apre finestra stampabile (utile su iOS Safari)
+  try{
+    const blob=new Blob([menuText()],{type:'text/plain;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`menu-${S.name.replace(/\s/g,'_')}.txt`;
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},500);
+    toast('Menù scaricato ⬇️');
+  }catch(e){
+    const w=window.open('','_blank');
+    w.document.write('<pre style="font-family:monospace;padding:16px;white-space:pre-wrap">'+menuText().replace(/</g,'&lt;')+'</pre>');
+    w.document.title='Menu '+S.name;
+    toast('Apri il menù e salvalo');
+  }
+}
+
+/* ============================================================
+   LISTA SPESA
+   ============================================================ */
+let shopDone={};
+function buildShop(){
+  const agg={};
+  MENU.days.forEach(day=>day.meals.forEach(meal=>meal.foods.forEach(it=>{
+    if(it.food==='__cheat__')return;
+    const ff=findFood(it.food);if(!ff)return;
+    if(!agg[it.food])agg[it.food]={g:0,cat:ff.cat};
+    agg[it.food].g+=(it.g||0);
+  })));
+  return agg;
+}
+const CATLBL={pro:'🍗 Proteine',carb:'🍚 Carboidrati & Cereali',fat:'🥑 Grassi & Frutta secca',veg:'🥦 Verdura',fruit:'🍎 Frutta',dairy:'🥛 Latticini'};
+function renderShop(){
+  if(!MENU){document.getElementById('sc-shop').innerHTML=emptyState('🛒','Nessun menù','Genera prima il menù settimanale');return;}
+  const agg=buildShop();
+  const byCat={};
+  Object.entries(agg).forEach(([n,o])=>{(byCat[o.cat]=byCat[o.cat]||[]).push([n,o.g]);});
+  let h=`<div class="daytitle"><h2>Lista della spesa</h2></div>
+    <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:8px">Tutto quello che serve per il menù della settimana (quantità totali a crudo).</p>`;
+  ['pro','carb','dairy','fat','veg','fruit'].forEach(cat=>{
+    if(!byCat[cat])return;
+    h+=`<div class="cat-h">${CATLBL[cat]}</div>`;
+    byCat[cat].sort((a,b)=>b[1]-a[1]).forEach(([n,g])=>{
+      const id=n.replace(/\W/g,'');
+      const qty=g>=1000?(g/1000).toFixed(1)+' kg':Math.round(g)+' g';
+      h+=`<div class="shop-item ${shopDone[n]?'done':''}" onclick="toggleShop('${n.replace(/'/g,"\\'")}')">
+        <div class="ck">✓</div><div class="si-n">${n}</div><div class="si-q">${qty}</div></div>`;
+    });
+  });
+  h+=`<div class="row" style="margin:18px 0 24px"><button class="btn" onclick="printShop()">🖨️ Stampa lista</button><button class="btn sec" onclick="downloadShop()">⬇️ Scarica</button></div>`;
+  document.getElementById('sc-shop').innerHTML=h;
+}
+function toggleShop(n){shopDone[n]=!shopDone[n];renderShop();}
+function shopText(){
+  const agg=buildShop();let t=`LISTA DELLA SPESA — ${S.name}\n${'='.repeat(30)}\n\n`;
+  const byCat={};Object.entries(agg).forEach(([n,o])=>{(byCat[o.cat]=byCat[o.cat]||[]).push([n,o.g]);});
+  ['pro','carb','dairy','fat','veg','fruit'].forEach(cat=>{if(!byCat[cat])return;t+=CATLBL[cat].replace(/[^\wàèéìòù &]/gi,'').trim()+'\n';byCat[cat].forEach(([n,g])=>{t+=`  [ ] ${n} — ${g>=1000?(g/1000).toFixed(1)+'kg':Math.round(g)+'g'}\n`;});t+='\n';});
+  return t;
+}
+function printShop(){document.getElementById('printArea').innerHTML='<h1>Lista della spesa — '+S.name+'</h1><pre style="font-family:inherit;white-space:pre-wrap;font-size:13px">'+shopText().split('\n').slice(2).join('\n')+'</pre>';setTimeout(()=>window.print(),120);}
+function downloadShop(){try{const b=new Blob([shopText()],{type:'text/plain;charset=utf-8'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='lista-spesa.txt';document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(u);},500);toast('Lista scaricata ⬇️');}catch(e){toast('Errore download');}}
+
+/* ============================================================
+   RICETTE  (incl. friggitrice ad aria)
+   ============================================================ */
+const RECIPES=[
+  {t:'Pollo croccante in friggitrice ad aria',af:true,ing:'Petto di pollo, olio EVO, paprika, sale, pepe',steps:'Taglia il pollo a strisce, condisci con un filo d’olio e spezie. Cuoci in friggitrice ad aria a 200°C per 12-14 min girando a metà. Servi con verdure.',base:'Petto di pollo'},
+  {t:'Salmone e asparagi in air fryer',af:true,ing:'Salmone, asparagi, olio EVO, limone',steps:'Disponi salmone e asparagi nel cestello, olio e limone. Air fryer 180°C per 10-12 min. Pronto!',base:'Salmone'},
+  {t:'Patate dolci croccanti in friggitrice ad aria',af:true,ing:'Patate dolci, olio EVO, rosmarino',steps:'Taglia a cubetti, condisci, friggitrice ad aria 200°C per 18-20 min scuotendo a metà.',base:'Patate dolci'},
+  {t:'Gamberi piccanti in air fryer',af:true,ing:'Gamberi, aglio, peperoncino, olio',steps:'Marina i gamberi 10 min, cuoci in friggitrice ad aria 200°C per 6-8 min.',base:'Gamberi'},
+  {t:'Frittata di albumi e verdure',af:false,ing:'Albume, spinaci, pomodori, parmigiano',steps:'Sbatti gli albumi, aggiungi verdure e parmigiano. Cuoci in padella antiaderente 5-6 min per lato.',base:'Albume'},
+  {t:'Bowl di riso, tofu e broccoli',af:false,ing:'Riso basmati, tofu, broccoli, olio EVO, salsa di soia',steps:'Cuoci riso e broccoli al vapore. Salta il tofu in padella. Assembla la bowl e condisci.',base:'Tofu'},
+  {t:'Pasta integrale al tonno e pomodori',af:false,ing:'Pasta integrale, tonno al naturale, pomodori, olio EVO',steps:'Cuoci la pasta. Soffriggi pomodori, aggiungi tonno. Manteca e servi.',base:'Tonno al naturale'},
+  {t:'Porridge proteico ai frutti di bosco',af:false,ing:'Avena, yogurt greco, frutti di bosco, burro di arachidi',steps:'Cuoci l’avena nel latte/acqua, aggiungi yogurt, frutti di bosco e una punta di burro d’arachidi.',base:'Avena'},
+  {t:'Merluzzo gratinato in friggitrice ad aria',af:true,ing:'Merluzzo, pangrattato, prezzemolo, olio',steps:'Impana il merluzzo, spruzza olio. Air fryer 190°C per 12 min.',base:'Merluzzo'},
+  {t:'Verdure miste arrostite in air fryer',af:true,ing:'Zucchine, peperoni, melanzane, olio EVO',steps:'Taglia le verdure, condisci. Friggitrice ad aria 190°C per 15 min mescolando.',base:'Zucchine'},
+];
+let recipeFilter='all';
+function renderRecipes(){
+  // ricette pertinenti agli alimenti presenti nel menù
+  let present=new Set();
+  if(MENU)MENU.days.forEach(d=>d.meals.forEach(m=>m.foods.forEach(it=>{if(it.food!=='__cheat__')present.add(it.food);})));
+  let list=RECIPES.filter(r=>{
+    if(recipeFilter==='af'&&!r.af)return false;
+    // escludi se ingrediente base è tra allergeni/sgraditi
+    const dis=(S.dislikes||'').toLowerCase(),alg=(S.allergies||'').toLowerCase();
+    if(dis.includes(r.base.toLowerCase()))return false;
+    return true;
+  });
+  // ordina: prima quelle con ingrediente nel menù
+  list.sort((a,b)=>(present.has(b.base)?1:0)-(present.has(a.base)?1:0));
+  let h=`<div class="daytitle"><h2>Ricette</h2></div>
+    <div class="chips" style="margin-bottom:14px">
+      <div class="chip ${recipeFilter==='all'?'on':''}" onclick="recipeFilter='all';renderRecipes()">Tutte</div>
+      <div class="chip ${recipeFilter==='af'?'on':''}" onclick="recipeFilter='af';renderRecipes()">🌀 Friggitrice ad aria</div>
+    </div>`;
+  list.forEach(r=>{
+    const inMenu=present.has(r.base);
+    h+=`<div class="recipe"><div class="rh"><span class="rt">${r.t}</span>${r.af?'<span class="af">AIR FRYER</span>':''}${inMenu?'<span class="af" style="background:rgba(52,211,153,.14);color:var(--accent)">nel menù</span>':''}</div>
+      <div class="ring"><b>Ingredienti:</b> ${r.ing}</div>
+      <div class="rsteps">${r.steps}</div></div>`;
+  });
+  document.getElementById('sc-recipes').innerHTML=h;
+}
+function emptyState(e,t,p){return `<div class="empty"><div class="ee">${e}</div><h3>${t}</h3><p>${p}</p></div>`;}
+
+/* ============================================================
+   AI COACH  (interprete comandi in linguaggio naturale)
+   ============================================================ */
+let chatHist=[];
+function initCoach(first){
+  if(first){
+    chatHist=[];
+    pushMsg('ai',`Ciao ${S.name}! 🤖 Sono il tuo AI coach. Ho già preparato il tuo menù settimanale rispettando i tuoi macro.\n\nPuoi chiedermi di:\n• <b>rigenerare</b> un pasto, un giorno o tutta la settimana\n• <b>cambiare un alimento</b> (“cambia il pollo di lunedì”)\n• dirmi <b>“non mi piace X”</b> e lo tolgo da tutto\n• la <b>lista della spesa</b> o delle <b>ricette</b> (anche friggitrice ad aria)\n• <b>scaricare/stampare</b> il menù\n\nDimmi pure! 💪`);
+  }
+  renderQuick();
+}
+function renderQuick(){
+  const qs=['Rigenera la settimana','Lista della spesa','Ricette friggitrice ad aria','Rigenera oggi','Scarica il menù','Più proteine'];
+  document.getElementById('quick').innerHTML=qs.map(q=>`<button onclick="coachQuick('${q.replace(/'/g,"\\'")}')">${q}</button>`).join('');
+}
+function pushMsg(role,txt){chatHist.push({role,txt});const m=document.getElementById('msgs');const d=document.createElement('div');d.className='msg '+role;d.innerHTML=txt;m.appendChild(d);m.scrollTop=m.scrollHeight;}
+function coachQuick(q){document.getElementById('chatIn').value=q;coachSend();}
+function coachSend(){
+  const inp=document.getElementById('chatIn');const t=inp.value.trim();if(!t)return;
+  pushMsg('user',t);inp.value='';
+  setTimeout(()=>{const r=coachReply(t);pushMsg('ai',r);},350);
+}
+
+// parser: trova giorno e pasto citati
+function parseDay(t){for(let i=0;i<7;i++){if(t.includes(DAYS[i].toLowerCase())||t.includes(DSHORT[i].toLowerCase()))return i;}if(t.includes('oggi'))return curDay;if(t.includes('domani'))return (curDay+1)%7;return -1;}
+function parseMeal(t){const names=S.mealNames.map(n=>n.toLowerCase());for(let i=0;i<names.length;i++){if(t.includes(names[i]))return i;}if(t.includes('colaz'))return names.findIndex(n=>n.includes('colaz'));if(t.includes('pranzo'))return names.findIndex(n=>n.includes('pranzo'));if(t.includes('cena'))return names.findIndex(n=>n.includes('cena'));return -1;}
+
+function coachReply(raw){
+  const t=raw.toLowerCase();
+  // SALUTI
+  if(/^(ciao|ehi|hey|buongiorno|buonasera|salve)\b/.test(t))return `Ciao ${S.name}! 👋 Come posso aiutarti col tuo menù? Posso rigenerare pasti, cambiare alimenti, fare la lista della spesa o suggerirti ricette.`;
+  if(/grazie|perfetto|ottimo|bene/.test(t)&&t.length<25)return 'Di niente! 💪 Sono qui se ti serve altro.';
+
+  // STAMPA / DOWNLOAD
+  if(/(scarica|download|esporta|salva)/.test(t)&&/menu|menù/.test(t)||/(scarica|download|esporta)/.test(t)&&!/spesa/.test(t)){downloadMenu();return '⬇️ Sto scaricando il tuo menù settimanale in formato testo. Lo trovi nei download!';}
+  if(/stampa/.test(t)){if(/spesa/.test(t)){go('shop');setTimeout(printShop,300);return '🖨️ Apro la stampa della lista della spesa.';}printMenu();return '🖨️ Apro l’anteprima di stampa del menù. Da lì puoi anche salvarlo come PDF!';}
+
+  // LISTA SPESA
+  if(/spesa|comprare|comprato|acquist|supermercat/.test(t)){go('shop');return '🛒 Ecco la <b>lista della spesa</b> con tutto quello che serve per il menù della settimana, diviso per reparto. La trovi nella scheda Spesa!';}
+
+  // RICETTE
+  if(/ricett|cucinar|friggitrice|air ?fryer|forno/.test(t)){if(/friggitrice|air ?fryer/.test(t)){recipeFilter='af';}go('recipes');renderRecipes();return /friggitrice|air ?fryer/.test(t)?'🌀 Ecco le ricette per la <b>friggitrice ad aria</b> con i tuoi alimenti! Le trovi nella scheda Ricette.':'📖 Ti ho aperto le <b>ricette</b> consigliate con gli alimenti del tuo menù — incluse quelle per friggitrice ad aria!';}
+
+  // NON MI PIACE X
+  let mdis=t.match(/non mi piac\w*\s+(?:il |la |lo |i |le |gli |l')?([a-zàèéìòù ]+)/);
+  if(mdis||/togli|elimina|rimuovi|odio|detesto/.test(t)){
+    let term=mdis?mdis[1].trim():(t.match(/(?:togli|elimina|rimuovi|odio|detesto)\s+(?:il |la |lo |l')?([a-zàèéìòù ]+)/)||[])[1];
+    if(term){term=term.trim();
+      S.dislikes=(S.dislikes?S.dislikes+', ':'')+term;save();
+      generateWeek();renderMenu();
+      return `Capito 👍 Ho aggiunto <b>${term}</b> agli alimenti da evitare e ho rigenerato tutto il menù senza usarlo, mantenendo i tuoi macro. Lo vedi nella scheda Menù!`;
+    }
+  }
+  // ALLERGIA
+  let malg=t.match(/(?:sono allergic\w*|allergia|intoller\w*)\s*(?:a|al|alla|ai|alle|agli)?\s*([a-zàèéìòù ]+)/);
+  if(malg&&malg[1]){const term=malg[1].trim();S.allergies=(S.allergies?S.allergies+', ':'')+term;save();generateWeek();renderMenu();return `Registrato ⚠️ Ho segnato l’allergia a <b>${term}</b> e rigenerato il menù escludendo questi alimenti. Stai tranquillo!`;}
+
+  // PIÙ / MENO MACRO
+  if(/più protein|piu protein|aumenta.*protein|alza.*protein/.test(t)){S.macros.train.p+=15;S.macros.rest.p+=15;save();generateWeek();renderMenu();return '💪 Ho aumentato le proteine di 15g al giorno e riadattato tutto il menù. Le kcal si aggiornano in automatico!';}
+  if(/meno carb|riduci.*carb|abbassa.*carb/.test(t)){S.macros.train.c=Math.max(50,S.macros.train.c-30);S.macros.rest.c=Math.max(50,S.macros.rest.c-30);save();generateWeek();renderMenu();return '📉 Ho ridotto i carboidrati di 30g al giorno e rigenerato il menù mantenendo l’equilibrio.';}
+  if(/più carb|piu carb|aumenta.*carb/.test(t)){S.macros.train.c+=30;S.macros.rest.c+=30;save();generateWeek();renderMenu();return '🍚 Carboidrati aumentati di 30g/giorno. Menù aggiornato!';}
+
+  // RIGENERA
+  const day=parseDay(t),meal=parseMeal(t);
+  if(/rigener|cambia|nuovo|diverso|varia|altro menu|altro menù/.test(t)){
+    if(/settiman|tutto|intero menu|intero menù/.test(t)){regenAll();go('menu');return '🔁 Fatto! Ho rigenerato <b>tutta la settimana</b> con un menù vario che rispetta i tuoi macro.';}
+    if(day>=0&&meal>=0){regenMeal(day,meal);curDay=day;go('menu');return `🔄 Ho rigenerato <b>${S.mealNames[meal]} di ${DAYS[day]}</b> mantenendo i macro del pasto.`;}
+    if(meal>=0){regenMeal(curDay,meal);go('menu');return `🔄 Ho rigenerato <b>${S.mealNames[meal]}</b> di ${DAYS[curDay]}.`;}
+    if(day>=0){regenDay(day);curDay=day;go('menu');return `🔄 Ho rigenerato tutto il <b>${DAYS[day]}</b> con pasti nuovi e vari.`;}
+    if(/oggi/.test(t)){regenDay(curDay);go('menu');return '🔄 Giorno rigenerato!';}
+    regenAll();go('menu');return '🔁 Ho rigenerato il menù settimanale rispettando i tuoi macro!';
+  }
+  // CAMBIA SINGOLO ALIMENTO citato
+  for(const f of DB){if(t.includes(f.n.toLowerCase())){
+    // trova dove sta nel menù e suggerisci alternative
+    const alts=allowed(f.cat).filter(a=>a.n!==f.n).slice(0,3).map(a=>a.n);
+    return `Vuoi cambiare <b>${f.n}</b>? 👀 Apri la scheda Menù e tocca ✏️ accanto all’alimento: ti propongo alternative come <b>${alts.join(', ')}</b> e, se non ti vanno, puoi cercare un prodotto e riadatto in automatico gli altri alimenti per centrare i macro.`;
+  }}
+
+  // MACRO / INFO
+  if(/macro|calorie|kcal|quanto|obiettiv/.test(t)){const tg=dayTarget(curDay);const g=dayMacros(curDay);return `📊 Oggi (${DAYS[curDay]} — ${tg.label}):\n<b>Obiettivo:</b> ${kcalFromMacros(tg.p,tg.c,tg.f)}kcal · P${tg.p} C${tg.c} G${tg.f}\n<b>Nel menù:</b> ${g.k}kcal · P${g.p} C${g.c} G${g.f}\n\nLe calorie le calcolo sempre in automatico dai macro!`;}
+  if(/sgarro|cheat|pasto liber/.test(t)){if(S.cheat.enabled)return `🍕 Il tuo pasto sgarro è <b>${DAYS[S.cheat.day]}</b> (${S.mealNames[S.cheat.mealIndex]}): ${S.cheat.desc||'pasto libero'}. È solo quel pasto e conto comunque i macro (P${S.cheat.p} C${S.cheat.c} G${S.cheat.f}). Puoi modificarlo dalla scheda Menù o dalle Impostazioni.`;return 'Al momento non hai un pasto sgarro impostato. Puoi attivarlo dalle Impostazioni ⚙️ e scegliere giorno, pasto e di cosa è fatto!';}
+  if(/impostazion|settings|profilo|modifica.*macro|cambia.*macro/.test(t)){openSettings();return '⚙️ Ti ho aperto le Impostazioni: qui puoi cambiare macro, pasti, sgarro, allergie e cibi che non ti piacciono. Tutto ciò che hai impostato all’inizio!';}
+  if(/aiuto|help|cosa puoi|come funzion/.test(t))return 'Ecco cosa posso fare per te 🤖:\n• <b>“rigenera lunedì / la cena / la settimana”</b>\n• <b>“non mi piace il tofu”</b> → lo tolgo da tutto\n• <b>“sono allergico al lattosio”</b>\n• <b>“più proteine” / “meno carboidrati”</b>\n• <b>“lista della spesa”</b>\n• <b>“ricette friggitrice ad aria”</b>\n• <b>“scarica/stampa il menù”</b>\nProva pure!';
+
+  // fallback
+  return `Non sono sicuro di aver capito 🤔. Posso: rigenerare pasti/giorni/settimana, cambiare alimenti, gestire allergie e cibi non graditi, fare la lista della spesa, suggerire ricette (anche friggitrice ad aria) e far scaricare/stampare il menù.\nProva ad esempio: <b>“rigenera la cena di oggi”</b> o <b>“lista della spesa”</b>.`;
+}
+
+/* ============================================================
+   IMPOSTAZIONI
+   ============================================================ */
+function openSettings(){go('settings');}
+function renderSettings(){
+  const d=S;
+  let h=`<div class="daytitle"><h2>Impostazioni</h2></div>
+    <p class="sub" style="color:var(--muted);font-size:13px;margin-bottom:14px">Modifica quello che vuoi: rigenero il menù di conseguenza. Le calorie restano sempre calcolate in automatico dai macro.</p>`;
+
+  h+=`<div class="card"><h2>👤 Profilo</h2><div class="sub">Nome e allenamenti</div>
+    <label class="fld"><span class="lab">Nome</span><input type="text" id="st_name" value="${d.name}"></label>
+    <label class="fld"><span class="lab">Allenamenti / settimana</span><input type="number" id="st_td" value="${d.trainingDays}"></label>
+    <div class="toggle"><span class="tlab">Due menù (allenamento / riposo)</span><div class="sw ${d.twoMenus?'on':''}" id="st_two" onclick="this.classList.toggle('on')"></div></div>
+    </div>`;
+
+  h+=`<div class="card"><h2>💪 Macro — Allenamento</h2><div class="sub">kcal: <b id="st_tk">${kcalFromMacros(d.macros.train.p,d.macros.train.c,d.macros.train.f)}</b> (auto)</div>
+    <div class="row" style="gap:8px"><label class="fld" style="flex:1"><span class="lab" style="color:var(--pro)">Pro</span><input type="number" id="st_tp" value="${d.macros.train.p}" oninput="stKcal('t')"></label>
+      <label class="fld" style="flex:1"><span class="lab" style="color:var(--car)">Carbo</span><input type="number" id="st_tc" value="${d.macros.train.c}" oninput="stKcal('t')"></label>
+      <label class="fld" style="flex:1"><span class="lab" style="color:var(--fat)">Grassi</span><input type="number" id="st_tf" value="${d.macros.train.f}" oninput="stKcal('t')"></label></div></div>`;
+
+  h+=`<div class="card"><h2>🛌 Macro — Riposo</h2><div class="sub">kcal: <b id="st_rk">${kcalFromMacros(d.macros.rest.p,d.macros.rest.c,d.macros.rest.f)}</b> (auto)</div>
+    <div class="row" style="gap:8px"><label class="fld" style="flex:1"><span class="lab" style="color:var(--pro)">Pro</span><input type="number" id="st_rp" value="${d.macros.rest.p}" oninput="stKcal('r')"></label>
+      <label class="fld" style="flex:1"><span class="lab" style="color:var(--car)">Carbo</span><input type="number" id="st_rc" value="${d.macros.rest.c}" oninput="stKcal('r')"></label>
+      <label class="fld" style="flex:1"><span class="lab" style="color:var(--fat)">Grassi</span><input type="number" id="st_rf" value="${d.macros.rest.f}" oninput="stKcal('r')"></label></div></div>`;
+
+  h+=`<div class="card"><h2>🍽️ Pasti al giorno</h2>
+    <label class="fld" style="margin:0"><input type="number" id="st_meals" value="${d.meals}" min="2" max="7"></label></div>`;
+
+  h+=`<div class="card"><h2>🍕 Pasto sgarro</h2>
+    <div class="toggle"><span class="tlab">Attivo</span><div class="sw ${d.cheat.enabled?'on':''}" id="st_cheat" onclick="this.classList.toggle('on')"></div></div>
+    <label class="fld"><span class="lab">Giorno</span><select id="st_chday">${DAYS.map((dd,i)=>`<option value="${i}" ${d.cheat.day===i?'selected':''}>${dd}</option>`).join('')}</select></label>
+    <label class="fld"><span class="lab">Pasto</span><select id="st_chmeal">${mealNamesFor(d.meals).map((n,i)=>`<option value="${i}" ${d.cheat.mealIndex===i?'selected':''}>${n}</option>`).join('')}</select></label>
+    <label class="fld"><span class="lab">In cosa consiste</span><input type="text" id="st_chdesc" value="${d.cheat.desc||''}"></label>
+    <div class="row" style="gap:8px"><label class="fld" style="flex:1"><span class="lab" style="color:var(--pro)">Pro</span><input type="number" id="st_chp" value="${d.cheat.p}"></label>
+      <label class="fld" style="flex:1"><span class="lab" style="color:var(--car)">Carbo</span><input type="number" id="st_chc" value="${d.cheat.c}"></label>
+      <label class="fld" style="flex:1"><span class="lab" style="color:var(--fat)">Grassi</span><input type="number" id="st_chf" value="${d.cheat.f}"></label></div></div>`;
+
+  h+=`<div class="card"><h2>⚠️ Allergie</h2><label class="fld" style="margin:0"><textarea id="st_alg" placeholder="Scrivi liberamente">${d.allergies||''}</textarea></label></div>`;
+  h+=`<div class="card"><h2>🙅 Cibi che non mi piacciono</h2><label class="fld" style="margin:0"><textarea id="st_dis" placeholder="Scrivi liberamente">${d.dislikes||''}</textarea></label></div>`;
+
+  h+=`<button class="btn" onclick="saveSettings()">💾 Salva e rigenera menù</button>
+    <button class="btn ghost" style="margin-top:10px" onclick="go('menu')">Annulla</button>
+    <button class="btn danger" style="margin:18px 0 30px" onclick="resetAll()">↩️ Rifai il questionario iniziale</button>`;
+
+  document.getElementById('sc-settings').innerHTML=h;
+}
+function stKcal(p){const pp=+document.getElementById('st_'+p+'p').value||0,cc=+document.getElementById('st_'+p+'c').value||0,ff=+document.getElementById('st_'+p+'f').value||0;document.getElementById('st_'+p+'k').textContent=kcalFromMacros(pp,cc,ff);}
+function saveSettings(){
+  S.name=document.getElementById('st_name').value.trim()||S.name;
+  S.trainingDays=+document.getElementById('st_td').value||S.trainingDays;
+  S.twoMenus=document.getElementById('st_two').classList.contains('on');
+  S.macros.train={p:+document.getElementById('st_tp').value||0,c:+document.getElementById('st_tc').value||0,f:+document.getElementById('st_tf').value||0};
+  S.macros.rest={p:+document.getElementById('st_rp').value||0,c:+document.getElementById('st_rc').value||0,f:+document.getElementById('st_rf').value||0};
+  if(!S.twoMenus)S.macros.rest={...S.macros.train};
+  const nm=+document.getElementById('st_meals').value||S.meals;
+  if(nm!==S.meals){S.meals=Math.max(2,Math.min(7,nm));S.mealNames=mealNamesFor(S.meals);}
+  S.cheat.enabled=document.getElementById('st_cheat').classList.contains('on');
+  S.cheat.day=+document.getElementById('st_chday').value;
+  S.cheat.mealIndex=Math.min(+document.getElementById('st_chmeal').value,S.meals-1);
+  S.cheat.desc=document.getElementById('st_chdesc').value.trim();
+  S.cheat.p=+document.getElementById('st_chp').value||0;
+  S.cheat.c=+document.getElementById('st_chc').value||0;
+  S.cheat.f=+document.getElementById('st_chf').value||0;
+  S.allergies=document.getElementById('st_alg').value.trim();
+  S.dislikes=document.getElementById('st_dis').value.trim();
+  save();generateWeek();go('menu');toast('Impostazioni salvate · menù rigenerato ✅');
+}
+function resetAll(){if(confirm('Vuoi rifare il questionario iniziale? Le impostazioni attuali verranno usate come base.')){startOnboarding(S);}}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+function boot(){
+  if(S && S.macros){
+    document.getElementById('nav').style.display='flex';
+    document.getElementById('gearBtn').style.display='flex';
+    if(!MENU)generateWeek();
+    go('menu');
+    initCoach(true);
+  } else {
+    startOnboarding(null);
+  }
+}
+document.getElementById('chatIn').addEventListener('keypress',e=>{if(e.key==='Enter')coachSend();});
+boot();
+</script>
 </body>
 </html>
