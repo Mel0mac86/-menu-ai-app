@@ -7,6 +7,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Macro AI">
 <meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" href="./icon-192.png">
 <title>Macro AI — Menù Nutrizionale</title>
 <style>
 :root{
@@ -325,6 +329,30 @@ const DB = [
   {n:'Frutti di bosco',k:43,p:1,c:10,f:0.3,cat:'fruit',alg:[],tags:['bk']},
   {n:'Kiwi',k:61,p:1.1,c:15,f:0.5,cat:'fruit',alg:[],tags:['bk']},
   {n:'Arancia',k:47,p:0.9,c:12,f:0.1,cat:'fruit',alg:[],tags:['bk']},
+  {n:'Ananas',k:50,p:0.5,c:13,f:0.1,cat:'fruit',alg:[],tags:['bk']},
+  {n:'Pera',k:57,p:0.4,c:15,f:0.1,cat:'fruit',alg:[],tags:['bk']},
+  // extra proteine
+  {n:'Coniglio',k:114,p:21,c:0,f:3,cat:'pro',alg:[]},
+  {n:'Vitello',k:107,p:21,c:0,f:2.5,cat:'pro',alg:[]},
+  {n:'Branzino',k:97,p:18,c:0,f:2.5,cat:'pro',alg:['pesce']},
+  {n:'Orata',k:121,p:20,c:0,f:4,cat:'pro',alg:['pesce']},
+  {n:'Sgombro in scatola',k:180,p:19,c:0,f:11,cat:'pro',alg:['pesce']},
+  {n:'Skyr',k:63,p:11,c:4,f:0.2,cat:'dairy',alg:['lattosio'],tags:['bk']},
+  {n:'Mozzarella light',k:200,p:23,c:1,f:12,cat:'dairy',alg:['lattosio']},
+  {n:'Piselli',k:81,p:5,c:14,f:0.4,cat:'pro',alg:[]},
+  // extra carbo
+  {n:'Riso venere',k:120,p:3,c:24,f:1,cat:'carb',alg:[]},
+  {n:'Pane di segale',k:259,p:9,c:48,f:3.3,cat:'carb',alg:['glutine'],tags:['bk']},
+  {n:'Fiocchi d’avena',k:370,p:13,c:60,f:7,cat:'carb',alg:['glutine'],tags:['bk']},
+  {n:'Tortillas integrali',k:310,p:8,c:50,f:8,cat:'carb',alg:['glutine']},
+  {n:'Grano saraceno',k:343,p:13,c:72,f:3.4,cat:'carb',alg:[]},
+  // extra grassi/verdure
+  {n:'Olive',k:115,p:0.8,c:6,f:11,cat:'fat',alg:[]},
+  {n:'Semi di lino',k:534,p:18,c:29,f:42,cat:'fat',alg:[],tags:['bk']},
+  {n:'Nocciole',k:628,p:15,c:17,f:61,cat:'fat',alg:['frutta a guscio']},
+  {n:'Fagiolini',k:31,p:1.8,c:7,f:0.1,cat:'veg',alg:[]},
+  {n:'Cavolo nero',k:35,p:2.5,c:4,f:0.5,cat:'veg',alg:[]},
+  {n:'Radicchio',k:23,p:1.4,c:4.5,f:0.3,cat:'veg',alg:[]},
 ];
 const findFood=n=>DB.find(x=>x.n===n);
 
@@ -412,7 +440,8 @@ function renderOb(){
     // 2 — macros allenamento
     `<div class="ob-emoji">💪</div><h2>${d.twoMenus?'Macro — Allenamento':'I tuoi macronutrienti'}</h2>
      <p class="q">Inserisci i grammi giornalieri. Le <b>calorie le calcolo io</b> automaticamente! 🔢</p>
-     ${macroEditor('train')}`,
+     ${macroEditor('train')}
+     <button class="btn ghost sm" style="width:100%;margin-top:4px" onclick="openMacroCalc('ob')">🧮 Non li conosci? Calcola i tuoi macro</button>`,
 
     // 3 — macros riposo (solo se two)
     `<div class="ob-emoji">🛌</div><h2>Macro — Riposo</h2>
@@ -495,6 +524,55 @@ function obMacroPreview(key){
   const c=+document.getElementById('ob_'+key+'_c').value||0;
   const f=+document.getElementById('ob_'+key+'_f').value||0;
   document.getElementById('ob_'+key+'_kcal').textContent=kcalFromMacros(p,c,f);
+}
+
+/* ---- Calcolatore macro (Mifflin-St Jeor + split) ---- */
+function openMacroCalc(mode){
+  const h=`<h3>🧮 Calcola i tuoi macro</h3>
+    <div class="msub">Stima i tuoi macronutrienti da pochi dati. Potrai sempre modificarli a mano.</div>
+    <div class="row" style="gap:8px"><label class="fld" style="flex:1"><span class="lab">Sesso</span>
+      <select id="mc_sex"><option value="m">Uomo</option><option value="f">Donna</option></select></label>
+      <label class="fld" style="flex:1"><span class="lab">Età</span><input type="number" id="mc_age" value="30"></label></div>
+    <div class="row" style="gap:8px"><label class="fld" style="flex:1"><span class="lab">Peso (kg)</span><input type="number" id="mc_w" value="75"></label>
+      <label class="fld" style="flex:1"><span class="lab">Altezza (cm)</span><input type="number" id="mc_h" value="175"></label></div>
+    <label class="fld"><span class="lab">Attività</span>
+      <select id="mc_act">
+        <option value="1.2">Sedentario</option>
+        <option value="1.375">Leggera (1-2 allen.)</option>
+        <option value="1.55" selected>Moderata (3-4 allen.)</option>
+        <option value="1.725">Intensa (5-6 allen.)</option>
+        <option value="1.9">Molto intensa</option></select></label>
+    <label class="fld"><span class="lab">Obiettivo</span>
+      <select id="mc_goal"><option value="-0.18">Dimagrire</option><option value="0" selected>Mantenere</option><option value="0.12">Aumentare massa</option></select></label>
+    <div id="mc_out" class="note">Compila e premi Calcola.</div>
+    <button class="btn" style="margin-top:14px" onclick="doMacroCalc('${mode}')">Calcola e applica</button>`;
+  openModal(h);
+}
+function doMacroCalc(mode){
+  const sex=document.getElementById('mc_sex').value;
+  const age=+document.getElementById('mc_age').value||30;
+  const w=+document.getElementById('mc_w').value||75;
+  const ht=+document.getElementById('mc_h').value||175;
+  const act=+document.getElementById('mc_act').value;
+  const goal=+document.getElementById('mc_goal').value;
+  // Mifflin-St Jeor
+  let bmr=10*w+6.25*ht-5*age+(sex==='m'?5:-161);
+  let kcal=bmr*act*(1+goal);
+  // split: proteine 2g/kg, grassi 0.9g/kg, resto carbo
+  const p=Math.round(2*w);
+  const f=Math.round(0.9*w);
+  const c=Math.max(50,Math.round((kcal-(p*4+f*9))/4));
+  document.getElementById('mc_out').innerHTML=`Stima: <b>${kcalFromMacros(p,c,f)} kcal</b> · P<b>${p}</b> C<b>${c}</b> G<b>${f}</b> g`;
+  // applica
+  if(mode==='ob'){
+    ob.data.macros.train={p,c,f};
+    ob.data.macros.rest={p,c:Math.round(c*0.65),f}; // riposo: meno carbo
+    setTimeout(()=>{closeModal();renderOb();toast('Macro calcolati e applicati ✅');},700);
+  } else {
+    S.macros.train={p,c,f};
+    S.macros.rest=S.twoMenus?{p,c:Math.round(c*0.65),f}:{p,c,f};
+    setTimeout(()=>{closeModal();renderSettings();toast('Macro calcolati ✅ — premi Salva');},700);
+  }
 }
 function obStep(field,delta){
   ob.data[field]=Math.max(field==='meals'?2:1,Math.min(field==='meals'?7:7,ob.data[field]+delta));
@@ -741,6 +819,17 @@ function renderMenu(){
     ${macroBar('Grassi',got.f,tgt.f,'var(--fat)')}
   </div>`;
 
+  // tracker acqua (solo per il giorno di oggi)
+  if(curDay===((new Date().getDay()+6)%7)){
+    const w=waterGet();
+    h+=`<div class="tgt" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div><div style="font-size:13px;font-weight:700">💧 Acqua di oggi</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">${(w*0.25).toFixed(2)} L · obiettivo 2 L</div>
+        <div style="font-size:16px;margin-top:6px;letter-spacing:1px">${'🥛'.repeat(Math.min(w,8))}${'·'.repeat(Math.max(0,8-w))}</div></div>
+      <div class="stepper" style="gap:8px"><button onclick="waterAdd(-1)">−</button><div class="val" style="font-size:20px;min-width:34px">${w}</div><button onclick="waterAdd(1)">+</button></div>
+    </div>`;
+  }
+
   // meals
   day.meals.forEach((meal,mi)=>{
     const mm=mealMacros(meal);
@@ -774,12 +863,41 @@ function renderMenu(){
       <button class="btn sec" onclick="regenDay(${curDay})">🔄 Rigenera giorno</button>
       <button class="btn sec" onclick="regenAll()">🔁 Rigenera settimana</button>
     </div>`;
-  h+=`<div class="row" style="margin-bottom:24px">
+
+  // riepilogo settimanale (medie)
+  const wk=weekAvg();
+  h+=`<div class="card" style="margin-top:4px">
+    <h2>📊 Media settimanale</h2>
+    <div class="sub">Valori medi giornalieri del tuo menù.</div>
+    <div class="macro-row">
+      <div class="mp cal"><div class="v">${wk.k}</div><div class="l">kcal</div></div>
+      <div class="mp pro"><div class="v">${wk.p}</div><div class="l">Pro</div></div>
+      <div class="mp car"><div class="v">${wk.c}</div><div class="l">Carbo</div></div>
+      <div class="mp fat"><div class="v">${wk.f}</div><div class="l">Grassi</div></div>
+    </div>
+  </div>`;
+
+  h+=`<div class="row" style="margin-bottom:10px">
       <button class="btn" onclick="printMenu()">🖨️ Stampa</button>
       <button class="btn sec" onclick="downloadMenu()">⬇️ Scarica</button>
     </div>`;
+  h+=`<button class="btn ghost" style="margin-bottom:24px" onclick="shareMenu()">📤 Condividi il menù</button>`;
 
   document.getElementById('sc-menu').innerHTML=h;
+}
+function weekAvg(){let t={k:0,p:0,c:0,f:0};for(let d=0;d<7;d++){const m=dayMacros(d);t.k+=m.k;t.p+=m.p;t.c+=m.c;t.f+=m.f;}return {k:Math.round(t.k/7),p:Math.round(t.p/7),c:Math.round(t.c/7),f:Math.round(t.f/7)};}
+
+/* ---- Tracker acqua (per data) ---- */
+function todayKey(){return new Date().toISOString().slice(0,10);}
+function waterGet(){try{const w=JSON.parse(localStorage.getItem('macroai_water'))||{};return w[todayKey()]||0;}catch(e){return 0;}}
+function waterAdd(d){let w={};try{w=JSON.parse(localStorage.getItem('macroai_water'))||{};}catch(e){}w[todayKey()]=Math.max(0,(w[todayKey()]||0)+d);localStorage.setItem('macroai_water',JSON.stringify(w));renderMenu();}
+
+/* ---- Condividi (Web Share API, ottimo su iPhone) ---- */
+async function shareMenu(){
+  if(!MENU)return;
+  const txt=menuText();
+  if(navigator.share){try{await navigator.share({title:'Il mio menù — Macro AI',text:txt});}catch(e){}}
+  else{downloadMenu();toast('Condivisione non disponibile · scaricato');}
 }
 function macroBar(lbl,got,tgt,col){
   const pct=tgt>0?Math.min(100,Math.round(got/tgt*100)):0;
@@ -1018,7 +1136,7 @@ function downloadMenu(){
 /* ============================================================
    LISTA SPESA
    ============================================================ */
-let shopDone={};
+let shopDone=(()=>{try{return JSON.parse(localStorage.getItem('macroai_shop'))||{}}catch(e){return {}}})();
 function buildShop(){
   const agg={};
   MENU.days.forEach(day=>day.meals.forEach(meal=>meal.foods.forEach(it=>{
@@ -1050,7 +1168,7 @@ function renderShop(){
   h+=`<div class="row" style="margin:18px 0 24px"><button class="btn" onclick="printShop()">🖨️ Stampa lista</button><button class="btn sec" onclick="downloadShop()">⬇️ Scarica</button></div>`;
   document.getElementById('sc-shop').innerHTML=h;
 }
-function toggleShop(n){shopDone[n]=!shopDone[n];renderShop();}
+function toggleShop(n){shopDone[n]=!shopDone[n];localStorage.setItem('macroai_shop',JSON.stringify(shopDone));renderShop();}
 function shopText(){
   const agg=buildShop();let t=`LISTA DELLA SPESA — ${S.name}\n${'='.repeat(30)}\n\n`;
   const byCat={};Object.entries(agg).forEach(([n,o])=>{(byCat[o.cat]=byCat[o.cat]||[]).push([n,o.g]);});
@@ -1186,6 +1304,8 @@ function coachReply(raw){
   // MACRO / INFO
   if(/macro|calorie|kcal|quanto|obiettiv/.test(t)){const tg=dayTarget(curDay);const g=dayMacros(curDay);return `📊 Oggi (${DAYS[curDay]} — ${tg.label}):\n<b>Obiettivo:</b> ${kcalFromMacros(tg.p,tg.c,tg.f)}kcal · P${tg.p} C${tg.c} G${tg.f}\n<b>Nel menù:</b> ${g.k}kcal · P${g.p} C${g.c} G${g.f}\n\nLe calorie le calcolo sempre in automatico dai macro!`;}
   if(/sgarro|cheat|pasto liber/.test(t)){if(S.cheat.enabled)return `🍕 Il tuo pasto sgarro è <b>${DAYS[S.cheat.day]}</b> (${S.mealNames[S.cheat.mealIndex]}): ${S.cheat.desc||'pasto libero'}. È solo quel pasto e conto comunque i macro (P${S.cheat.p} C${S.cheat.c} G${S.cheat.f}). Puoi modificarlo dalla scheda Menù o dalle Impostazioni.`;return 'Al momento non hai un pasto sgarro impostato. Puoi attivarlo dalle Impostazioni ⚙️ e scegliere giorno, pasto e di cosa è fatto!';}
+  if(/calcola.*macro|non so.*macro|quanti.*dovrei|stima.*macro|aiuto.*macro/.test(t)){openMacroCalc('settings');return '🧮 Apro il calcolatore: con pochi dati (peso, altezza, età, attività, obiettivo) stimo i tuoi macro. Poi premi Salva!';}
+  if(/acqua|bere|idrataz/.test(t)){go('menu');return '💧 Trovi il tracker dell’acqua in alto nella scheda Menù (giorno di oggi): tocca + ogni bicchiere da 250 ml. Obiettivo 2 L!';}
   if(/impostazion|settings|profilo|modifica.*macro|cambia.*macro/.test(t)){openSettings();return '⚙️ Ti ho aperto le Impostazioni: qui puoi cambiare macro, pasti, sgarro, allergie e cibi che non ti piacciono. Tutto ciò che hai impostato all’inizio!';}
   if(/aiuto|help|cosa puoi|come funzion/.test(t))return 'Ecco cosa posso fare per te 🤖:\n• <b>“rigenera lunedì / la cena / la settimana”</b>\n• <b>“non mi piace il tofu”</b> → lo tolgo da tutto\n• <b>“sono allergico al lattosio”</b>\n• <b>“più proteine” / “meno carboidrati”</b>\n• <b>“lista della spesa”</b>\n• <b>“ricette friggitrice ad aria”</b>\n• <b>“scarica/stampa il menù”</b>\nProva pure!';
 
@@ -1211,7 +1331,8 @@ function renderSettings(){
   h+=`<div class="card"><h2>💪 Macro — Allenamento</h2><div class="sub">kcal: <b id="st_tk">${kcalFromMacros(d.macros.train.p,d.macros.train.c,d.macros.train.f)}</b> (auto)</div>
     <div class="row" style="gap:8px"><label class="fld" style="flex:1"><span class="lab" style="color:var(--pro)">Pro</span><input type="number" id="st_tp" value="${d.macros.train.p}" oninput="stKcal('t')"></label>
       <label class="fld" style="flex:1"><span class="lab" style="color:var(--car)">Carbo</span><input type="number" id="st_tc" value="${d.macros.train.c}" oninput="stKcal('t')"></label>
-      <label class="fld" style="flex:1"><span class="lab" style="color:var(--fat)">Grassi</span><input type="number" id="st_tf" value="${d.macros.train.f}" oninput="stKcal('t')"></label></div></div>`;
+      <label class="fld" style="flex:1"><span class="lab" style="color:var(--fat)">Grassi</span><input type="number" id="st_tf" value="${d.macros.train.f}" oninput="stKcal('t')"></label></div>
+    <button class="btn ghost sm" style="width:100%;margin-top:4px" onclick="openMacroCalc('settings')">🧮 Calcola i miei macro</button></div>`;
 
   h+=`<div class="card"><h2>🛌 Macro — Riposo</h2><div class="sub">kcal: <b id="st_rk">${kcalFromMacros(d.macros.rest.p,d.macros.rest.c,d.macros.rest.f)}</b> (auto)</div>
     <div class="row" style="gap:8px"><label class="fld" style="flex:1"><span class="lab" style="color:var(--pro)">Pro</span><input type="number" id="st_rp" value="${d.macros.rest.p}" oninput="stKcal('r')"></label>
@@ -1277,6 +1398,11 @@ function boot(){
   }
 }
 document.getElementById('chatIn').addEventListener('keypress',e=>{if(e.key==='Enter')coachSend();});
+
+/* Service worker: abilita installazione e uso offline sull'iPhone */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{});});
+}
 boot();
 </script>
 </body>
