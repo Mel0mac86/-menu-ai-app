@@ -358,7 +358,29 @@ const DB = [
   {n:'Cavolo nero',k:35,p:2.5,c:4,f:0.5,cat:'veg',alg:[]},
   {n:'Radicchio',k:23,p:1.4,c:4.5,f:0.3,cat:'veg',alg:[]},
 ];
-const findFood=n=>DB.find(x=>x.n===n);
+/* ---------- ALIMENTI PERSONALIZZATI (salvati in locale) ----------
+   FOODS = database di base (DB) + alimenti creati/modificati dall'utente.
+   Un alimento custom con lo stesso nome SOVRASCRIVE quello di base. */
+let CUSTOM=(()=>{try{return JSON.parse(localStorage.getItem('macroai_foods'))||[]}catch(e){return []}})();
+let FOODS=[];
+function rebuildFoods(){
+  // preserva l'ordine del DB di base (il generatore vi fa affidamento per la varietà):
+  // override sul posto, nuovi alimenti in coda.
+  const cByName={};CUSTOM.forEach(f=>cByName[f.n]=f);
+  FOODS=DB.map(f=>cByName[f.n]||f);
+  CUSTOM.forEach(f=>{ if(!DB.some(b=>b.n===f.n))FOODS.push(f); });
+}
+function saveCustomFoods(){localStorage.setItem('macroai_foods',JSON.stringify(CUSTOM));rebuildFoods();}
+function isCustom(n){return CUSTOM.some(f=>f.n===n);}
+// crea o aggiorna un alimento personalizzato
+function upsertFood(food){
+  const i=CUSTOM.findIndex(f=>f.n===food.n);
+  if(i>=0)CUSTOM[i]=food; else CUSTOM.push(food);
+  saveCustomFoods();
+}
+function deleteCustomFood(n){CUSTOM=CUSTOM.filter(f=>f.n!==n);saveCustomFoods();}
+rebuildFoods();
+const findFood=n=>FOODS.find(x=>x.n===n);
 
 const DAYS=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
 const DSHORT=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
@@ -678,7 +700,7 @@ function dayTarget(dayIdx){
 function allowed(cat,dayIdx,seed){
   const algText=(S.allergies||'').toLowerCase();
   const disText=(S.dislikes||'').toLowerCase();
-  return DB.filter(f=>f.cat===cat).filter(f=>{
+  return FOODS.filter(f=>f.cat===cat).filter(f=>{
     // allergeni
     for(const a of f.alg){ if(algText.includes(a.toLowerCase().split(' ')[0]))return false; }
     if(algText.includes('lattosio')&&f.cat==='dairy')return false;
@@ -938,7 +960,8 @@ function editFood(d,mi,fi){
       <input type="text" id="ed_search" placeholder="Scrivi un alimento…" oninput="searchAlt(${d},${mi},${fi},this.value)"></label>
     <div id="ed_results"></div>
     <div class="note">Quando sostituisci o cambi quantità, <b>riadatto automaticamente gli altri alimenti del pasto</b> per centrare i tuoi macro giornalieri.</div>`;
-  h+=`<button class="btn danger" style="margin-top:14px" onclick="removeFood(${d},${mi},${fi})">🗑️ Rimuovi alimento</button>`;
+  h+=`<button class="btn sec" style="margin-top:14px" onclick="editFoodValues('${it.food.replace(/'/g,"\\'")}',null)">✏️ Modifica valori (P/C/G/kcal) di ${it.food}</button>`;
+  h+=`<button class="btn danger" style="margin-top:10px" onclick="removeFood(${d},${mi},${fi})">🗑️ Rimuovi dal pasto</button>`;
   openModal(h);
 }
 function setQty(d,mi,fi){
@@ -960,7 +983,7 @@ function swapFood(d,mi,fi,name){
 function searchAlt(d,mi,fi,q){
   q=q.trim().toLowerCase();const box=document.getElementById('ed_results');
   if(q.length<2){box.innerHTML='';return;}
-  const res=DB.filter(f=>f.n.toLowerCase().includes(q)).slice(0,6);
+  const res=FOODS.filter(f=>f.n.toLowerCase().includes(q)).slice(0,6);
   if(!res.length){box.innerHTML='<div class="note">Nessun alimento trovato. Prova con un altro nome.</div>';return;}
   box.innerHTML='<div class="altlist">'+res.map(a=>`<div class="alt"><div><div class="an">${a.n}</div><div class="am">${a.k}kcal/100g · P${a.p} C${a.c} G${a.f}</div></div>
     <button onclick="swapFood(${d},${mi},${fi},'${a.n.replace(/'/g,"\\'")}')">Scegli</button></div>`).join('')+'</div>';
@@ -970,14 +993,15 @@ function removeFood(d,mi,fi){
   saveMenu();closeModal();renderMenu();toast('Alimento rimosso');
 }
 function addFood(d,mi){
-  let h=`<h3>Aggiungi alimento</h3><div class="msub">Scegli un alimento da aggiungere a questo pasto</div>
+  let h=`<h3>Aggiungi alimento</h3><div class="msub">Scegli un alimento o creane uno nuovo (resta salvato)</div>
     <label class="fld"><input type="text" id="af_search" placeholder="Cerca alimento…" oninput="afSearch(${d},${mi},this.value)" autofocus></label>
+    <button class="btn ghost sm" style="width:100%;margin-bottom:10px" onclick="editFoodValues(null,{d:${d},mi:${mi}})">＋ Crea nuovo alimento</button>
     <div id="af_results"></div>`;
   openModal(h);afSearch(d,mi,'');
 }
 function afSearch(d,mi,q){
   q=q.trim().toLowerCase();
-  let res=q.length<1?DB.slice(0,40):DB.filter(f=>f.n.toLowerCase().includes(q));
+  let res=q.length<1?FOODS.slice(0,40):FOODS.filter(f=>f.n.toLowerCase().includes(q));
   res=res.slice(0,30);
   document.getElementById('af_results').innerHTML='<div class="altlist">'+res.map(a=>`<div class="alt"><div><div class="an">${a.n}</div><div class="am">${a.k}kcal/100g · P${a.p} C${a.c} G${a.f}</div></div>
     <button onclick="doAddFood(${d},${mi},'${a.n.replace(/'/g,"\\'")}')">＋</button></div>`).join('')+'</div>';
@@ -986,6 +1010,78 @@ function doAddFood(d,mi,name){
   const nf=findFood(name);
   MENU.days[d].meals[mi].foods.push({food:name,g:nf.cat==='fat'&&nf.f>=90?10:nf.cat==='veg'?100:80,locked:true});
   saveMenu();closeModal();renderMenu();toast(name+' aggiunto');
+}
+
+/* ============================================================
+   GESTIONE ALIMENTI  (crea / modifica / elimina, con salvataggio)
+   ============================================================ */
+const FOOD_CATS={pro:'Proteine',carb:'Carboidrati',fat:'Grassi',veg:'Verdura',fruit:'Frutta',dairy:'Latticini'};
+const ALG_LIST=['glutine','lattosio','uova','pesce','crostacei','frutta a guscio','soia','arachidi'];
+
+// editor valori alimento. name=null → nuovo. ctx: {d,mi} aggiungi al pasto · {diary:true} · {manager:true}
+function editFoodValues(name,ctx){
+  const f=name?findFood(name):null;
+  const cat=f?f.cat:'pro', alg=f?(f.alg||[]):[];
+  let h=`<h3>${f?'Modifica alimento':'Nuovo alimento'}</h3>
+   <div class="msub">Valori <b>per 100 g</b> a crudo. L’alimento resta salvato e comparirà nella ricerca.</div>
+   <label class="fld"><span class="lab">Nome</span><input type="text" id="fv_n" value="${(name||'').replace(/"/g,'&quot;')}" placeholder="es. Skyr alla vaniglia"></label>
+   <label class="fld"><span class="lab">Categoria</span><select id="fv_cat">${Object.entries(FOOD_CATS).map(([v,l])=>`<option value="${v}" ${cat===v?'selected':''}>${l}</option>`).join('')}</select></label>
+   <div class="row" style="gap:8px">
+     <label class="fld" style="flex:1"><span class="lab" style="color:var(--pro)">Proteine</span><input type="number" step="0.1" id="fv_p" value="${f?f.p:''}" oninput="fvCalc()"></label>
+     <label class="fld" style="flex:1"><span class="lab" style="color:var(--car)">Carboidrati</span><input type="number" step="0.1" id="fv_c" value="${f?f.c:''}" oninput="fvCalc()"></label>
+     <label class="fld" style="flex:1"><span class="lab" style="color:var(--fat)">Grassi</span><input type="number" step="0.1" id="fv_f" value="${f?f.f:''}" oninput="fvCalc()"></label>
+   </div>
+   <label class="fld"><span class="lab">kcal per 100 g <span class="hint">— calcolate dai macro se la lasci vuota</span></span>
+     <div class="row" style="gap:8px"><input type="number" id="fv_k" value="${f?f.k:''}" placeholder="auto"><button class="btn sm sec" style="padding:13px 14px;flex:0 0 auto" onclick="fvCalc(true)">Calcola</button></div></label>
+   <span class="lab" style="font-size:13px;font-weight:600;display:block;margin-bottom:8px">Allergeni contenuti (per allergie e filtri)</span>
+   <div class="chips" id="fv_alg">${ALG_LIST.map(a=>`<div class="chip ${alg.includes(a)?'on':''}" onclick="this.classList.toggle('on')" data-a="${a}">${a}</div>`).join('')}</div>
+   <button class="btn" style="margin-top:16px" onclick='saveFoodValues(${JSON.stringify(name)},${JSON.stringify(ctx||null)})'>💾 Salva alimento</button>`;
+  if(name&&isCustom(name))h+=`<button class="btn danger" style="margin-top:10px" onclick='deleteFoodPrompt(${JSON.stringify(name)})'>🗑️ Elimina alimento</button>`;
+  else if(name)h+=`<div class="note" style="margin-top:10px">Stai modificando un alimento di base: salverò una tua versione personalizzata (potrai ripristinarla eliminandola).</div>`;
+  openModal(h);
+}
+function fvCalc(force){
+  const p=+document.getElementById('fv_p').value||0,c=+document.getElementById('fv_c').value||0,f=+document.getElementById('fv_f').value||0;
+  const kEl=document.getElementById('fv_k');
+  if(force||!kEl.value)kEl.value=kcalFromMacros(p,c,f);
+}
+function saveFoodValues(orig,ctx){
+  const n=document.getElementById('fv_n').value.trim();
+  if(!n){toast('Inserisci un nome');return;}
+  const p=+document.getElementById('fv_p').value||0,c=+document.getElementById('fv_c').value||0,f=+document.getElementById('fv_f').value||0;
+  let k=+document.getElementById('fv_k').value; if(!k)k=kcalFromMacros(p,c,f);
+  const cat=document.getElementById('fv_cat').value;
+  const alg=[...document.querySelectorAll('#fv_alg .chip.on')].map(x=>x.dataset.a);
+  if(orig && orig!==n && isCustom(orig))deleteCustomFood(orig); // rinominato
+  upsertFood({n,k:Math.round(k),p:+p,c:+c,f:+f,cat,alg});
+  closeModal();toast('Alimento salvato ✓');
+  if(ctx&&ctx.d!=null){doAddFood(ctx.d,ctx.mi,n);return;}
+  if(ctx&&ctx.diary){diaPick(n);return;}
+  if(ctx&&ctx.manager){openFoodManager();return;}
+  if(MENU)renderMenu();           // aggiorna i macro nei pasti che usano l'alimento
+}
+function deleteFoodPrompt(n){
+  if(confirm('Eliminare "'+n+'"? Verrà tolto dalla ricerca. (Se è una modifica di un alimento di base, torna ai valori originali.)')){
+    deleteCustomFood(n);closeModal();toast('Alimento eliminato');
+    if(document.getElementById('fm_search'))openFoodManager(); else if(MENU)renderMenu();
+  }
+}
+function openFoodManager(){
+  let h=`<h3>🍎 I miei alimenti</h3>
+   <div class="msub">Crea, modifica ed elimina alimenti. Quelli che salvi restano e compaiono sempre nella ricerca. Hai ${CUSTOM.length} aliment${CUSTOM.length===1?'o':'i'} personalizzat${CUSTOM.length===1?'o':'i'}.</div>
+   <button class="btn" style="margin-bottom:12px" onclick="editFoodValues(null,{manager:true})">＋ Nuovo alimento</button>
+   <label class="fld"><input type="text" id="fm_search" placeholder="Cerca tra tutti gli alimenti…" oninput="fmSearch(this.value)"></label>
+   <div id="fm_results"></div>`;
+  openModal(h);fmSearch('');
+}
+function fmSearch(q){
+  q=q.trim().toLowerCase();
+  let res=(q.length<1?FOODS.slice():FOODS.filter(f=>f.n.toLowerCase().includes(q)))
+    .sort((a,b)=>a.n.localeCompare(b.n,'it')).slice(0,80);
+  const box=document.getElementById('fm_results');if(!box)return;
+  box.innerHTML='<div class="altlist">'+res.map(a=>`<div class="alt"><div><div class="an">${a.n} ${isCustom(a.n)?'<span style="color:var(--accent2);font-size:10px;font-weight:700">• TUO</span>':''}</div><div class="am">${FOOD_CATS[a.cat]||a.cat} · ${a.k}kcal/100g · P${a.p} C${a.c} G${a.f}</div></div>
+    <button onclick='editFoodValues(${JSON.stringify(a.n)},{manager:true})'>✏️</button></div>`).join('')+'</div>'
+    +(res.length?'':'<div class="note">Nessun alimento. Tocca “Nuovo alimento” per crearlo.</div>');
 }
 function addMeal(d){
   const n=MENU.days[d].meals.length+1;
@@ -1382,12 +1478,13 @@ function diaryShift(delta){
 function diaryAddFood(){
   let h=`<h3>Aggiungi al diario</h3><div class="msub">Cerca un alimento e indica i grammi consumati</div>
     <label class="fld"><input type="text" id="dia_search" placeholder="Cerca alimento…" oninput="diaSearch(this.value)" autofocus></label>
+    <button class="btn ghost sm" style="width:100%;margin-bottom:10px" onclick="editFoodValues(null,{diary:true})">＋ Crea nuovo alimento</button>
     <div id="dia_results"></div>`;
   openModal(h);diaSearch('');
 }
 function diaSearch(q){
   q=q.trim().toLowerCase();
-  let res=q.length<1?DB.slice(0,40):DB.filter(f=>f.n.toLowerCase().includes(q));
+  let res=q.length<1?FOODS.slice(0,40):FOODS.filter(f=>f.n.toLowerCase().includes(q));
   res=res.slice(0,30);
   document.getElementById('dia_results').innerHTML='<div class="altlist">'+res.map(a=>`<div class="alt"><div><div class="an">${a.n}</div><div class="am">${a.k}kcal/100g · P${a.p} C${a.c} G${a.f}</div></div>
     <button onclick="diaPick('${a.n.replace(/'/g,"\\'")}')">＋</button></div>`).join('')+'</div>';
@@ -1551,7 +1648,7 @@ function coachReply(raw){
   }
   // CAMBIA SINGOLO ALIMENTO citato — solo se c'è intenzione di sostituzione
   if(/cambi|sostitu|modific|alternativ|al posto|invece d|non voglio/.test(t)){
-    for(const f of DB){if(t.includes(f.n.toLowerCase())){
+    for(const f of FOODS){if(t.includes(f.n.toLowerCase())){
       const alts=allowed(f.cat).filter(a=>a.n!==f.n).slice(0,3).map(a=>a.n);
       return `Vuoi cambiare <b>${f.n}</b>? 👀 Apri la scheda Menù e tocca ✏️ accanto all’alimento: ti propongo alternative come <b>${alts.join(', ')}</b> e, se non ti vanno, puoi cercare un prodotto e riadatto in automatico gli altri alimenti per centrare i macro.`;
     }}
@@ -1635,6 +1732,10 @@ function renderSettings(){
 
   h+=`<div class="card"><h2>⚠️ Allergie</h2><label class="fld" style="margin:0"><textarea id="st_alg" placeholder="Scrivi liberamente">${d.allergies||''}</textarea></label></div>`;
   h+=`<div class="card"><h2>🙅 Cibi che non mi piacciono</h2><label class="fld" style="margin:0"><textarea id="st_dis" placeholder="Scrivi liberamente">${d.dislikes||''}</textarea></label></div>`;
+
+  h+=`<div class="card"><h2>🍎 I miei alimenti</h2>
+    <div class="sub">Crea nuovi alimenti o modifica quelli esistenti (proteine, carboidrati, grassi, kcal). Restano salvati e li ritrovi sempre nella ricerca — non devi riscriverli ogni volta.</div>
+    <button class="btn sec" style="width:100%" onclick="openFoodManager()">Gestisci alimenti${CUSTOM.length?' ('+CUSTOM.length+' tuoi)':''}</button></div>`;
 
   // AI avanzata (opzionale)
   const hasKey=!!localStorage.getItem('macroai_key');
