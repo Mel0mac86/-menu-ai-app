@@ -1,6 +1,6 @@
 /* Service worker — Macro AI
    App-shell cache così l'app funziona anche offline e si installa sull'iPhone. */
-const CACHE = 'macroai-v2';
+const CACHE = 'macroai-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -23,12 +23,13 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // Lascia passare le richieste esterne (es. scanner barcode da CDN, Open Food Facts API)
+  if (!e.request.url.startsWith(self.location.origin)) return;
   e.respondWith(
     caches.match(e.request).then(hit => {
       if (hit) return hit;
       return fetch(e.request).then(res => {
-        // metti in cache le richieste same-origin riuscite
-        if (res && res.status === 200 && e.request.url.startsWith(self.location.origin)) {
+        if (res && res.status === 200) {
           const copy = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, copy));
         }
