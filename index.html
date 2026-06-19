@@ -1011,8 +1011,9 @@ function afSearch(d,mi,q){
 }
 function doAddFood(d,mi,name){
   const nf=findFood(name);
-  MENU.days[d].meals[mi].foods.push({food:name,g:nf.cat==='fat'&&nf.f>=90?10:nf.cat==='veg'?100:80,locked:true});
-  saveMenu();closeModal();renderMenu();toast(name+' aggiunto');
+  const g=nf.por?round5(nf.por):(nf.cat==='fat'&&nf.f>=90?10:nf.cat==='veg'?100:80);
+  MENU.days[d].meals[mi].foods.push({food:name,g,locked:true});
+  saveMenu();closeModal();renderMenu();toast(name+' aggiunto'+(nf.por?` (${g} g)`:''));
 }
 
 /* ============================================================
@@ -1040,6 +1041,11 @@ function editFoodValues(name,ctx,preset){
    </div>
    <label class="fld"><span class="lab">kcal per 100 g <span class="hint">— calcolate dai macro se la lasci vuota</span></span>
      <div class="row" style="gap:8px"><input type="number" id="fv_k" value="${f?f.k:''}" placeholder="auto"><button class="btn sm sec" style="padding:13px 14px;flex:0 0 auto" onclick="fvCalc(true)">Calcola</button></div></label>
+   <span class="lab" style="font-size:13px;font-weight:600;display:block;margin-bottom:8px">Porzione predefinita <span class="hint">(facoltativa) — usata come quantità di partenza</span></span>
+   <div class="row" style="gap:8px;margin-bottom:14px">
+     <label class="fld" style="flex:1;margin:0"><span class="lab">Grammi</span><input type="number" id="fv_por" value="${f&&f.por?f.por:''}" placeholder="es. 125"></label>
+     <label class="fld" style="flex:1.4;margin:0"><span class="lab">Nome porzione</span><input type="text" id="fv_porl" value="${f&&f.porl?(''+f.porl).replace(/"/g,'&quot;'):''}" placeholder="es. vasetto, fetta, uovo"></label>
+   </div>
    <span class="lab" style="font-size:13px;font-weight:600;display:block;margin-bottom:8px">Allergeni contenuti (per allergie e filtri)</span>
    <div class="chips" id="fv_alg">${ALG_LIST.map(a=>`<div class="chip ${alg.includes(a)?'on':''}" onclick="this.classList.toggle('on')" data-a="${a}">${a}</div>`).join('')}</div>
    <button class="btn" style="margin-top:16px" onclick='saveFoodValues(${JSON.stringify(name)},${JSON.stringify(ctx||null)})'>💾 Salva alimento</button>`;
@@ -1063,6 +1069,9 @@ function saveFoodValues(orig,ctx){
   const food={n,k:Math.round(k),p:+p,c:+c,f:+f,cat,alg};
   if(_editBc)food.bc=_editBc;       // mantieni il codice a barre (riconoscimento offline)
   _editBc=null;
+  const por=+document.getElementById('fv_por').value||0;
+  const porl=document.getElementById('fv_porl').value.trim();
+  if(por>0)food.por=por; if(porl)food.porl=porl;
   upsertFood(food);
   closeModal();toast('Alimento salvato ✓');
   if(ctx&&ctx.d!=null){doAddFood(ctx.d,ctx.mi,n);return;}
@@ -1092,7 +1101,7 @@ function fmSearch(q){
   let res=(q.length<1?FOODS.slice():FOODS.filter(f=>f.n.toLowerCase().includes(q)))
     .sort((a,b)=>a.n.localeCompare(b.n,'it')).slice(0,80);
   const box=document.getElementById('fm_results');if(!box)return;
-  box.innerHTML='<div class="altlist">'+res.map(a=>`<div class="alt"><div><div class="an">${a.n} ${isCustom(a.n)?'<span style="color:var(--accent2);font-size:10px;font-weight:700">• TUO</span>':''}</div><div class="am">${FOOD_CATS[a.cat]||a.cat} · ${a.k}kcal/100g · P${a.p} C${a.c} G${a.f}</div></div>
+  box.innerHTML='<div class="altlist">'+res.map(a=>`<div class="alt"><div><div class="an">${a.n} ${isCustom(a.n)?'<span style="color:var(--accent2);font-size:10px;font-weight:700">• TUO</span>':''}</div><div class="am">${FOOD_CATS[a.cat]||a.cat} · ${a.k}kcal/100g · P${a.p} C${a.c} G${a.f}${a.por?` · 🍽️ ${a.por}g`:''}</div></div>
     <button onclick='editFoodValues(${JSON.stringify(a.n)},{manager:true})'>✏️</button></div>`).join('')+'</div>'
     +(res.length?'':'<div class="note">Nessun alimento. Tocca “Nuovo alimento” per crearlo.</div>');
 }
@@ -1158,17 +1167,20 @@ async function lookupBarcode(code,ctx){
   if(local){closeModal();toast('Prodotto riconosciuto ✓');editFoodValues(local.n,ctx);return;}
   openModal(`<h3>🔎 Cerco il prodotto…</h3><div class="msub">Codice ${code}</div><div style="text-align:center;padding:28px"><span class="spin"></span> Consulto Open Food Facts…</div>`);
   try{
-    const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json?fields=product_name,brands,nutriments,categories_tags,allergens_tags');
+    const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json?fields=product_name,brands,nutriments,categories_tags,allergens_tags,serving_quantity,serving_size');
     const data=await r.json();
     if(!data||data.status!==1||!data.product){openModal(bcNotFound(code,ctx));return;}
     const p=data.product, n=p.nutriments||{};
     let kcal=n['energy-kcal_100g']; if(kcal==null&&n['energy_100g']!=null)kcal=n['energy_100g']/4.184;
+    const por=Math.round(parseFloat(p.serving_quantity)||0);     // porzione in grammi
     const preset={
       n:([p.brands,p.product_name].filter(Boolean).join(' ').trim())||('Prodotto '+code),
       k:Math.round(kcal||kcalFromMacros(+n.proteins_100g||0,+n.carbohydrates_100g||0,+n.fat_100g||0)),
       p:Math.round((+n.proteins_100g||0)*10)/10, c:Math.round((+n.carbohydrates_100g||0)*10)/10, f:Math.round((+n.fat_100g||0)*10)/10,
       cat:guessCat(p), alg:mapAllergens(p), bc:code
     };
+    if(por>0)preset.por=por;
+    if(p.serving_size)preset.porl=('porzione '+p.serving_size).slice(0,28);
     editFoodValues(null,ctx,preset);
   }catch(e){ openModal(bcNotFound(code,ctx,true)); }
 }
@@ -1590,9 +1602,11 @@ function diaSearch(q){
 }
 function diaPick(name){
   const ff=findFood(name);
-  const def=ff.cat==='fat'&&ff.f>=90?10:ff.cat==='veg'?150:100;
+  const def=ff.por?ff.por:(ff.cat==='fat'&&ff.f>=90?10:ff.cat==='veg'?150:100);
+  const porBtn=ff.por?`<button class="btn sec sm" style="width:100%;margin-bottom:10px" onclick="document.getElementById('dia_g').value=${ff.por}">1 ${ff.porl||'porzione'} = ${ff.por} g</button>`:'';
   openModal(`<h3>${name}</h3><div class="msub">${ff.k} kcal · P${ff.p} C${ff.c} G${ff.f} per 100 g</div>
     <label class="fld"><span class="lab">Grammi consumati</span><input type="number" id="dia_g" value="${def}" autofocus></label>
+    ${porBtn}
     <button class="btn" onclick="diaConfirm('${name.replace(/'/g,"\\'")}')">Aggiungi al diario</button>`);
 }
 function diaConfirm(name){
