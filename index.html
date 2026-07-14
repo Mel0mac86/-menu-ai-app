@@ -1190,6 +1190,112 @@ function bcNotFound(code,ctx,neterr){
     <button class="btn" onclick='editFoodValues(null,${cx},{n:"",k:"",p:"",c:"",f:"",cat:"pro",alg:[],bc:"${code}"})'>✍️ Inseriscilo a mano (con questo codice)</button>
     <button class="btn sec" style="margin-top:10px" onclick='scanBarcode(${cx})'>📷 Riprova a scansionare</button>`;
 }
+
+/* ============================================================
+   FOTO AL PIATTO  (analisi visiva → kcal → scelta pasto → diario)
+   ============================================================ */
+let _pmData=null;
+function photoMeal(){
+  const key=localStorage.getItem('macroai_key');
+  if(!(S.aiEnabled&&key)){
+    openModal(`<h3>📸 Foto al piatto</h3>
+      <div class="msub">Scatti una foto al piatto e stimo automaticamente ingredienti e calorie.</div>
+      <div class="note">Questa funzione usa l’AI visiva: attiva l’<b>AI avanzata</b> nelle Impostazioni ⚙️ inserendo la tua chiave API (serve internet).</div>
+      <button class="btn" style="margin-top:14px" onclick="closeModal();openSettings()">Vai alle Impostazioni</button>`);
+    return;
+  }
+  openModal(`<h3>📸 Foto al piatto</h3>
+    <div class="msub">Scatta o scegli una foto del piatto: stimo gli ingredienti e le calorie, poi scegli a quale pasto aggiungerla (conta nel totale della giornata).</div>
+    <input type="file" accept="image/*" id="pm_file" style="display:none" onchange="pmAnalyze(this)">
+    <button class="btn" onclick="document.getElementById('pm_file').click()">📷 Scatta / scegli una foto</button>
+    <div class="note" style="margin-top:12px">📡 Richiede internet. Le stime sono approssimative: potrai correggere o togliere gli ingredienti prima di salvare.</div>`);
+}
+function pmAnalyze(input){
+  const file=input.files&&input.files[0]; if(!file)return;
+  openModal(`<h3>📸 Analizzo il piatto…</h3><div style="text-align:center;padding:26px"><span class="spin"></span> Riconosco gli ingredienti e stimo le calorie…</div>`);
+  downscaleImage(file,1024,0.72).then(im=>{
+    const key=localStorage.getItem('macroai_key');
+    return analyzePlate(im.data,im.mime,key);
+  }).then(res=>{
+    if(res.error){openModal(`<h3>😕 ${res.error}</h3><div class="msub">Prova con una foto più nitida e ravvicinata.</div><button class="btn" style="margin-top:12px" onclick="photoMeal()">Riprova</button>`);return;}
+    _pmData={dish:res.piatto||'Piatto',note:res.nota||'',ing:(res.ingredienti||[]).map(x=>({name:String(x.nome||'ingrediente'),g:Math.round(+x.g||0),k:Math.round(+x.kcal||0),p:Math.round((+x.p||0)*10)/10,c:Math.round((+x.c||0)*10)/10,f:Math.round((+x.f||0)*10)/10}))};
+    pmRender();
+  }).catch(e=>{
+    openModal(`<h3>😕 Non sono riuscito ad analizzare la foto</h3><div class="msub">${(e&&e.message)||'Riprova con più luce.'}</div><button class="btn" style="margin-top:12px" onclick="photoMeal()">Riprova</button>`);
+  });
+}
+// ridimensiona l'immagine lato client per ridurre costi/token
+function downscaleImage(file,max,q){
+  return new Promise((res,rej)=>{
+    const img=new Image(), url=URL.createObjectURL(file);
+    img.onload=()=>{
+      let w=img.width,h=img.height; const sc=Math.min(1,max/Math.max(w,h)); w=Math.round(w*sc); h=Math.round(h*sc);
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      let durl; try{durl=cv.toDataURL('image/jpeg',q);}catch(e){URL.revokeObjectURL(url);return rej(new Error('immagine non valida'));}
+      URL.revokeObjectURL(url);
+      res({data:durl.split(',')[1],mime:'image/jpeg'});
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('immagine non valida'));};
+    img.src=url;
+  });
+}
+async function analyzePlate(data,mime,key){
+  const sys='Sei un nutrizionista esperto. Analizzi foto di piatti di cibo e stimi ingredienti, grammature e calorie in modo realistico. Rispondi SEMPRE e SOLO con un oggetto JSON valido, senza testo attorno e senza markdown.';
+  const prompt='Analizza questa foto di un piatto. Identifica il piatto e gli ingredienti visibili con le grammature stimate a occhio. Rispondi con questo JSON (numeri, in italiano): {"piatto":"nome breve","ingredienti":[{"nome":"...","g":numero,"kcal":numero,"p":numero,"c":numero,"f":numero}],"totale":{"kcal":numero,"p":numero,"c":numero,"f":numero},"nota":"1 frase con eventuali assunzioni"}. Se non è cibo, usa ingredienti vuoto.';
+  let r;
+  try{
+    r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-opus-4-8',max_tokens:1024,system:sys,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mime,data}},{type:'text',text:prompt}]}]})});
+  }catch(e){return {error:'Niente connessione'};}
+  if(!r.ok){ if(r.status===401)return{error:'Chiave API non valida'}; if(r.status===429)return{error:'Troppe richieste, riprova tra poco'}; return {error:'Errore AI ('+r.status+')'}; }
+  const j=await r.json();
+  let txt=(j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+  const s=txt.indexOf('{'), e=txt.lastIndexOf('}'); if(s>=0&&e>s)txt=txt.slice(s,e+1);
+  let obj; try{obj=JSON.parse(txt);}catch(err){return {error:'Non ho capito la foto, riprova'};}
+  if(!obj.ingredienti||!obj.ingredienti.length)return {error:'Non ho riconosciuto cibo nella foto'};
+  return obj;
+}
+function pmTotals(){return _pmData.ing.reduce((a,x)=>({k:a.k+x.k,p:a.p+x.p,c:a.c+x.c,f:a.f+x.f}),{k:0,p:0,c:0,f:0});}
+function pmRender(){
+  const d=_pmData, tot=pmTotals();
+  let h=`<h3>🍽️ ${d.dish}</h3><div class="msub">Stima approssimativa — correggi o togli ingredienti, poi scegli il pasto.</div>
+   <div class="macro-row" style="margin-bottom:12px">
+     <div class="mp cal"><div class="v">${Math.round(tot.k)}</div><div class="l">kcal</div></div>
+     <div class="mp pro"><div class="v">${Math.round(tot.p)}</div><div class="l">Pro</div></div>
+     <div class="mp car"><div class="v">${Math.round(tot.c)}</div><div class="l">Carbo</div></div>
+     <div class="mp fat"><div class="v">${Math.round(tot.f)}</div><div class="l">Grassi</div></div>
+   </div>
+   <div class="cat-h">Ingredienti stimati</div>`;
+  d.ing.forEach((x,i)=>{
+    h+=`<div class="food" style="border:1px solid var(--line);border-radius:12px;margin-bottom:8px">
+      <div class="fi"><div class="fn">${x.name}</div>
+        <div class="fg">~<input type="number" value="${x.g}" style="width:64px;padding:3px 6px;font-size:12px;display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:6px;color:var(--txt)" onchange="pmSetG(${i},this.value)"> g</div>
+        <div class="fmac"><span class="k">${x.k}kcal</span><span class="p">P ${x.p}</span><span class="c">C ${x.c}</span><span class="f">G ${x.f}</span></div></div>
+      <button class="fedit" onclick="pmRemove(${i})">🗑️</button></div>`;
+  });
+  if(d.note)h+=`<div class="note">💡 ${d.note}</div>`;
+  h+=`<label class="fld" style="margin-top:14px"><span class="lab">A quale pasto lo aggiungo?</span>
+      <select id="pm_meal">${S.mealNames.map((n,i)=>`<option value="${i}">${n}</option>`).join('')}</select></label>
+    <button class="btn" onclick="pmSave()">➕ Aggiungi al diario di oggi</button>
+    <button class="btn ghost" style="margin-top:10px" onclick="photoMeal()">📷 Nuova foto</button>`;
+  openModal(h);
+}
+// se cambi i grammi, riscalo kcal e macro dell'ingrediente in proporzione
+function pmSetG(i,val){
+  const x=_pmData.ing[i], ng=Math.max(0,+val||0), old=x.g||1, r=ng/old;
+  if(x.g){x.k=Math.round(x.k*r);x.p=Math.round(x.p*r*10)/10;x.c=Math.round(x.c*r*10)/10;x.f=Math.round(x.f*r*10)/10;}
+  x.g=ng; pmRender();
+}
+function pmRemove(i){_pmData.ing.splice(i,1); if(_pmData.ing.length)pmRender(); else{openModal(`<h3>Nessun ingrediente</h3><button class="btn" onclick="photoMeal()">📷 Nuova foto</button>`);} }
+function pmSave(){
+  const d=_pmData; if(!d||!d.ing.length){toast('Nessun ingrediente');return;}
+  const mealIdx=+document.getElementById('pm_meal').value||0, mealName=S.mealNames[mealIdx]||'Pasto', k=todayKey();
+  d.ing.forEach(x=>diaryAddEntry(k,{name:x.name,qty:x.g?x.g+' g':'',k:x.k,p:x.p,c:x.c,f:x.f,meal:mealName,src:'📸 '+d.dish}));
+  diarySel=k; closeModal(); go('diario');
+  toast('Aggiunto a '+mealName+' ✓');
+}
 function addMeal(d){
   const n=MENU.days[d].meals.length+1;
   MENU.days[d].meals.push({name:'Pasto extra',foods:[],cheat:false});
@@ -1562,14 +1668,16 @@ function renderDiario(){
     h+=`<div class="note">Nessuna voce. Aggiungi un alimento qui sotto, oppure tocca <b>✓ Mangiato</b> su un pasto nella scheda Menù.</div>`;
   } else {
     entries.forEach((e,i)=>{
+      const tag=[e.meal?`🍽️ ${e.meal}`:'',e.src?e.src:''].filter(Boolean).join(' · ');
       h+=`<div class="food" style="border:1px solid var(--line);border-radius:12px;margin-bottom:8px;border-top:1px solid var(--line)">
         <div class="fi"><div class="fn">${e.name}</div>
-          ${e.qty?`<div class="fg">${e.qty}</div>`:''}
+          ${(e.qty||tag)?`<div class="fg">${[e.qty,tag].filter(Boolean).join(' · ')}</div>`:''}
           <div class="fmac"><span class="k">${e.k}kcal</span><span class="p">P ${e.p}</span><span class="c">C ${e.c}</span><span class="f">G ${e.f}</span></div></div>
         <button class="fedit" onclick="diaryRemove('${k}',${i})">🗑️</button></div>`;
     });
   }
-  h+=`<div class="row" style="margin:12px 0 24px">
+  h+=`<button class="btn" style="background:linear-gradient(135deg,#a78bfa,#f472b6);color:#1a0410;margin-bottom:10px" onclick="photoMeal()">📸 Foto al piatto (stima kcal)</button>`;
+  h+=`<div class="row" style="margin:0 0 24px">
       <button class="btn" onclick="diaryAddFood()">＋ Aggiungi alimento</button>
       <button class="btn sec" onclick="diaryQuickAdd()">✏️ Voce rapida</button>
     </div>`;
@@ -1771,7 +1879,8 @@ function coachReply(raw){
   if(/sgarro|cheat|pasto liber/.test(t)){if(S.cheat.enabled)return `🍕 Il tuo pasto sgarro è <b>${DAYS[S.cheat.day]}</b> (${S.mealNames[S.cheat.mealIndex]}): ${S.cheat.desc||'pasto libero'}. È solo quel pasto e conto comunque i macro (P${S.cheat.p} C${S.cheat.c} G${S.cheat.f}). Puoi modificarlo dalla scheda Menù o dalle Impostazioni.`;return 'Al momento non hai un pasto sgarro impostato. Puoi attivarlo dalle Impostazioni ⚙️ e scegliere giorno, pasto e di cosa è fatto!';}
   if(/calcola.*macro|non so.*macro|quanti.*dovrei|stima.*macro|aiuto.*macro/.test(t)){openMacroCalc('settings');return '🧮 Apro il calcolatore: con pochi dati (peso, altezza, età, attività, obiettivo) stimo i tuoi macro. Poi premi Salva!';}
   if(/acqua|bere|idrataz/.test(t)){go('menu');return '💧 Trovi il tracker dell’acqua in alto nella scheda Menù (giorno di oggi): tocca + ogni bicchiere da 250 ml. Obiettivo 2 L!';}
-  if(/\bdiario\b|ho mangiato|registra.*pasto|cosa ho mangiato|tracci/.test(t)){go('diario');return '📔 Ti ho aperto il <b>Diario</b>: qui registri cosa mangi e vedi i macro rimanenti della giornata. Sul Menù puoi toccare <b>✓ Mangiato</b> per aggiungere un pasto al volo!';}
+  if(/\bfoto\b|scatta|fotograf|piatto.*calor|analizza.*piatto/.test(t)){photoMeal();return '📸 Ho aperto <b>Foto al piatto</b>: scatta una foto, stimo ingredienti e calorie e li aggiungo al pasto che scegli (contano nel totale della giornata).';}
+  if(/\bdiario\b|ho mangiato|registra.*pasto|cosa ho mangiato|tracci/.test(t)){go('diario');return '📔 Ti ho aperto il <b>Diario</b>: qui registri cosa mangi e vedi i macro rimanenti della giornata. Sul Menù puoi toccare <b>✓ Mangiato</b>, oppure usa <b>📸 Foto al piatto</b> per stimare le kcal da una foto!';}
   if(/\bpeso\b|peserm|quanto peso|pesata|dimagri.*track|media.*peso/.test(t)){go('diario');const wk=weeklyWeight(todayKey());return '⚖️ Apri il Diario per segnare il peso del giorno.'+(wk?` La tua media di questa settimana è <b>${wk.avg} kg</b> (${wk.n} pesate).`:' Aggiungi qualche pesata e calcolo la media settimanale automaticamente.');}
   if(/impostazion|settings|profilo|modifica.*macro|cambia.*macro/.test(t)){openSettings();return '⚙️ Ti ho aperto le Impostazioni: qui puoi cambiare macro, pasti, sgarro, allergie e cibi che non ti piacciono. Tutto ciò che hai impostato all’inizio!';}
   if(/aiuto|help|cosa puoi|come funzion/.test(t))return 'Ecco cosa posso fare per te 🤖:\n• <b>“rigenera lunedì / la cena / la settimana”</b>\n• <b>“non mi piace il tofu”</b> → lo tolgo da tutto\n• <b>“sono allergico al lattosio”</b>\n• <b>“più proteine” / “meno carboidrati”</b>\n• <b>“lista della spesa”</b> · <b>“ricette friggitrice ad aria”</b>\n• <b>“scarica/stampa il menù”</b> · <b>“segna il peso”</b>\n• Domande di nutrizione (proteine, carboidrati, digiuno, integratori…)\nProva pure!';
