@@ -1245,13 +1245,14 @@ async function analyzePlate(data,mime,key){
   const prompt='Analizza questa foto di un piatto. Identifica il piatto e gli ingredienti visibili con le grammature stimate a occhio. Rispondi con questo JSON (numeri, in italiano): {"piatto":"nome breve","ingredienti":[{"nome":"...","g":numero,"kcal":numero,"p":numero,"c":numero,"f":numero}],"totale":{"kcal":numero,"p":numero,"c":numero,"f":numero},"nota":"1 frase con eventuali assunzioni"}. Se non è cibo, usa ingredienti vuoto.';
   let r;
   try{
-    r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-      headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-opus-4-8',max_tokens:1024,system:sys,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mime,data}},{type:'text',text:prompt}]}]})});
+    r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
+      headers:{'content-type':'application/json','authorization':'Bearer '+key},
+      body:JSON.stringify({model:groqVModel(),max_tokens:1024,temperature:0.3,
+        messages:[{role:'system',content:sys},{role:'user',content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:'data:'+mime+';base64,'+data}}]}]})});
   }catch(e){return {error:'Niente connessione'};}
-  if(!r.ok){ if(r.status===401)return{error:'Chiave API non valida'}; if(r.status===429)return{error:'Troppe richieste, riprova tra poco'}; return {error:'Errore AI ('+r.status+')'}; }
+  if(!r.ok){ if(r.status===401)return{error:'Chiave Groq non valida'}; if(r.status===429)return{error:'Troppe richieste, riprova tra poco'}; if(r.status===404||r.status===400)return{error:'Modello foto non valido: controlla il nome nelle Impostazioni'}; return {error:'Errore AI ('+r.status+')'}; }
   const j=await r.json();
-  let txt=(j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+  let txt=((j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'').trim();
   const s=txt.indexOf('{'), e=txt.lastIndexOf('}'); if(s>=0&&e>s)txt=txt.slice(s,e+1);
   let obj; try{obj=JSON.parse(txt);}catch(err){return {error:'Non ho capito la foto, riprova'};}
   if(!obj.ingredienti||!obj.ingredienti.length)return {error:'Non ho riconosciuto cibo nella foto'};
@@ -1776,26 +1777,32 @@ function showTyping(){const m=document.getElementById('msgs');const d=document.c
 function removeTyping(id){const e=document.getElementById(id);if(e)e.remove();}
 
 // chiama l'API di Claude (modalità avanzata opzionale, richiede internet + chiave dell'utente)
+const GROQ_MODEL_DEFAULT='llama-3.3-70b-versatile';
+const GROQ_VMODEL_DEFAULT='meta-llama/llama-4-scout-17b-16e-instruct';
+function groqModel(){return localStorage.getItem('macroai_model')||GROQ_MODEL_DEFAULT;}
+function groqVModel(){return localStorage.getItem('macroai_vmodel')||GROQ_VMODEL_DEFAULT;}
+function groqErr(status){
+  if(status===401)return '🔑 La chiave Groq non sembra valida. Controllala nelle Impostazioni → AI avanzata.';
+  if(status===429)return '⏳ Troppe richieste (limite Groq). Riprova tra poco.';
+  if(status===404||status===400)return '⚠️ Modello Groq non disponibile: controlla il nome del modello nelle Impostazioni → AI avanzata (i modelli Groq cambiano nel tempo).';
+  return '⚠️ L’AI non risponde (errore '+status+'). Le funzioni del menù restano disponibili offline.';
+}
 async function askClaude(t,key){
   const sys=coachSystemPrompt();
-  // storico: ultimi messaggi, ripuliti dall'HTML
+  // storico: ultimi messaggi, ripuliti dall'HTML (formato OpenAI/Groq)
   const hist=chatHist.slice(-11,-1).map(m=>({role:m.role==='user'?'user':'assistant',
     content:String(m.txt).replace(/<[^>]+>/g,'').trim()})).filter(m=>m.content);
-  hist.push({role:'user',content:t});
+  const messages=[{role:'system',content:sys}].concat(hist,[{role:'user',content:t}]);
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
+    const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
-      headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-opus-4-8',max_tokens:1024,system:sys,messages:hist})
+      headers:{'content-type':'application/json','authorization':'Bearer '+key},
+      body:JSON.stringify({model:groqModel(),max_tokens:1024,temperature:0.6,messages})
     });
-    if(!r.ok){
-      if(r.status===401)return '🔑 La chiave API non sembra valida. Controllala nelle Impostazioni → AI avanzata.';
-      if(r.status===429)return '⏳ Troppe richieste in questo momento. Riprova tra poco.';
-      return '⚠️ L’AI non risponde (errore '+r.status+'). Le funzioni del menù restano disponibili offline.';
-    }
+    if(!r.ok)return groqErr(r.status);
     const data=await r.json();
-    const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
-    return txt? txt.replace(/\n/g,'\n') : 'Non ho una risposta in questo momento, riprova.';
+    const txt=((data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'').trim();
+    return txt || 'Non ho una risposta in questo momento, riprova.';
   }catch(e){
     return '📡 Niente connessione: l’AI avanzata richiede internet. Posso comunque gestire menù, spesa, ricette, diario e peso anche offline!';
   }
@@ -1958,15 +1965,21 @@ function renderSettings(){
     <div class="sub">Crea nuovi alimenti o modifica quelli esistenti (proteine, carboidrati, grassi, kcal). Restano salvati e li ritrovi sempre nella ricerca — non devi riscriverli ogni volta.</div>
     <button class="btn sec" style="width:100%" onclick="openFoodManager()">Gestisci alimenti${CUSTOM.length?' ('+CUSTOM.length+' tuoi)':''}</button></div>`;
 
-  // AI avanzata (opzionale)
+  // AI avanzata (opzionale) — Groq
   const hasKey=!!localStorage.getItem('macroai_key');
-  h+=`<div class="card"><h2>🤖 AI avanzata (opzionale)</h2>
-    <div class="sub">Fa rispondere il Coach a <b>qualsiasi</b> domanda in linguaggio libero usando il modello Claude. Richiede internet e una tua chiave API Anthropic. Il coach base (menù, spesa, ricette, diario, peso, domande di nutrizione) funziona sempre, anche offline e senza chiave.</div>
+  const curModel=localStorage.getItem('macroai_model')||'', curVModel=localStorage.getItem('macroai_vmodel')||'';
+  h+=`<div class="card"><h2>🤖 AI avanzata — Groq (opzionale)</h2>
+    <div class="sub">Fa rispondere il Coach a <b>qualsiasi</b> domanda e abilita la <b>Foto al piatto</b>, usando <b>Groq</b> (ha un piano gratuito). Richiede internet e una tua chiave Groq. Il coach base (menù, spesa, ricette, diario, peso, domande di nutrizione) funziona sempre, anche offline e senza chiave.</div>
     <div class="toggle"><span class="tlab">Attiva AI avanzata</span><div class="sw ${d.aiEnabled?'on':''}" id="st_ai" onclick="this.classList.toggle('on')"></div></div>
-    <label class="fld"><span class="lab">Chiave API Anthropic <span class="hint">(salvata solo sul tuo telefono)</span></span>
-      <input type="password" id="st_key" placeholder="${hasKey?'•••••••• (già salvata)':'sk-ant-...'}" autocomplete="off"></label>
-    <div class="note">🔒 La chiave resta in locale e viene usata solo per parlare con Claude. La ottieni da <b>console.anthropic.com</b>. L’uso ha un piccolo costo a tuo carico, a consumo.</div>
-    ${hasKey?`<button class="btn ghost sm" style="width:100%;margin-top:10px" onclick="if(confirm('Rimuovere la chiave API salvata?')){localStorage.removeItem('macroai_key');toast('Chiave rimossa');renderSettings();}">🗑️ Rimuovi chiave salvata</button>`:''}
+    <label class="fld"><span class="lab">Chiave API Groq <span class="hint">(salvata solo sul tuo telefono)</span></span>
+      <input type="password" id="st_key" placeholder="${hasKey?'•••••••• (già salvata)':'gsk_...'}" autocomplete="off"></label>
+    <div class="note">🔑 Crea la chiave gratis su <b>console.groq.com/keys</b>. Resta in locale e serve solo per l’AI del coach e la foto al piatto.</div>
+    <label class="fld" style="margin-top:14px"><span class="lab">Modello chat <span class="hint">(avanzato — lascia vuoto per il default)</span></span>
+      <input type="text" id="st_model" value="${curModel.replace(/"/g,'&quot;')}" placeholder="${GROQ_MODEL_DEFAULT}" autocomplete="off"></label>
+    <label class="fld"><span class="lab">Modello foto/vision <span class="hint">(avanzato)</span></span>
+      <input type="text" id="st_vmodel" value="${curVModel.replace(/"/g,'&quot;')}" placeholder="${GROQ_VMODEL_DEFAULT}" autocomplete="off"></label>
+    <div class="note">💡 I nomi dei modelli Groq cambiano nel tempo: se l’AI dà errore “modello non disponibile”, aggiorna qui il nome (elenco su <b>console.groq.com/docs/models</b>).</div>
+    ${hasKey?`<button class="btn ghost sm" style="width:100%;margin-top:10px" onclick="if(confirm('Rimuovere la chiave Groq salvata?')){localStorage.removeItem('macroai_key');toast('Chiave rimossa');renderSettings();}">🗑️ Rimuovi chiave salvata</button>`:''}
   </div>`;
 
   h+=`<button class="btn" onclick="saveSettings()">💾 Salva e rigenera menù</button>
@@ -1994,10 +2007,14 @@ function saveSettings(){
   S.cheat.f=+document.getElementById('st_chf').value||0;
   S.allergies=document.getElementById('st_alg').value.trim();
   S.dislikes=document.getElementById('st_dis').value.trim();
-  // AI avanzata
+  // AI avanzata (Groq)
   S.aiEnabled=document.getElementById('st_ai').classList.contains('on');
   const keyIn=document.getElementById('st_key').value.trim();
   if(keyIn)localStorage.setItem('macroai_key',keyIn);
+  const mdl=document.getElementById('st_model').value.trim();
+  const vmdl=document.getElementById('st_vmodel').value.trim();
+  if(mdl)localStorage.setItem('macroai_model',mdl); else localStorage.removeItem('macroai_model');
+  if(vmdl)localStorage.setItem('macroai_vmodel',vmdl); else localStorage.removeItem('macroai_vmodel');
   save();generateWeek();go('menu');toast('Impostazioni salvate · menù rigenerato ✅');
 }
 function resetAll(){if(confirm('Vuoi rifare il questionario iniziale? Le impostazioni attuali verranno usate come base.')){startOnboarding(S);}}
