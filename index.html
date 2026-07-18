@@ -1269,16 +1269,17 @@ function downscaleImage(file,max,q){
 async function analyzePlate(data,mime,key){
   const sys='Sei un nutrizionista esperto. Analizzi foto di piatti di cibo e stimi ingredienti, grammature e calorie in modo realistico. Rispondi SEMPRE e SOLO con un oggetto JSON valido, senza testo attorno e senza markdown.';
   const prompt='Analizza questa foto di un piatto. Identifica il piatto e gli ingredienti visibili con le grammature stimate a occhio. Rispondi con questo JSON (numeri, in italiano): {"piatto":"nome breve","ingredienti":[{"nome":"...","g":numero,"kcal":numero,"p":numero,"c":numero,"f":numero}],"totale":{"kcal":numero,"p":numero,"c":numero,"f":numero},"nota":"1 frase con eventuali assunzioni"}. Se non è cibo, usa ingredienti vuoto.';
-  let r;
+  let r; const vmdl=groqVModel();
   try{
     r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
       headers:{'content-type':'application/json','authorization':'Bearer '+key},
-      body:JSON.stringify({model:groqVModel(),max_tokens:1024,temperature:0.3,
-        messages:[{role:'system',content:sys},{role:'user',content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:'data:'+mime+';base64,'+data}}]}]})});
+      body:JSON.stringify(Object.assign({model:vmdl,max_tokens:1500,temperature:0.3,
+        messages:[{role:'system',content:sys},{role:'user',content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:'data:'+mime+';base64,'+data}}]}]},groqExtra(vmdl)))});
   }catch(e){return {error:'Niente connessione'};}
-  if(!r.ok){ if(r.status===401)return{error:'Chiave Groq non valida'}; if(r.status===429)return{error:'Troppe richieste, riprova tra poco'}; if(r.status===404||r.status===400)return{error:'Modello foto non valido: controlla il nome nelle Impostazioni'}; return {error:'Errore AI ('+r.status+')'}; }
+  if(!r.ok){ if(r.status===401)return{error:'Chiave Groq non valida'}; if(r.status===429)return{error:'Troppe richieste, riprova tra poco'}; if(r.status===404||r.status===400)return{error:'Modello foto non disponibile: aggiorna il nome nelle Impostazioni → AI avanzata'}; return {error:'Errore AI ('+r.status+')'}; }
   const j=await r.json();
   let txt=((j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'').trim();
+  txt=txt.split('</think>').pop(); // scarta eventuale ragionamento del modello
   const s=txt.indexOf('{'), e=txt.lastIndexOf('}'); if(s>=0&&e>s)txt=txt.slice(s,e+1);
   let obj; try{obj=JSON.parse(txt);}catch(err){return {error:'Non ho capito la foto, riprova'};}
   if(!obj.ingredienti||!obj.ingredienti.length)return {error:'Non ho riconosciuto cibo nella foto'};
@@ -1804,9 +1805,11 @@ function removeTyping(id){const e=document.getElementById(id);if(e)e.remove();}
 
 // chiama l'API di Claude (modalità avanzata opzionale, richiede internet + chiave dell'utente)
 const GROQ_MODEL_DEFAULT='llama-3.3-70b-versatile';
-const GROQ_VMODEL_DEFAULT='meta-llama/llama-4-scout-17b-16e-instruct';
+const GROQ_VMODEL_DEFAULT='qwen/qwen3.6-27b';
 function groqModel(){return localStorage.getItem('macroai_model')||GROQ_MODEL_DEFAULT;}
 function groqVModel(){return localStorage.getItem('macroai_vmodel')||GROQ_VMODEL_DEFAULT;}
+// i modelli "reasoning" (qwen) sprecano token a pensare: disattivo il ragionamento
+function groqExtra(model){return /qwen/i.test(model)?{reasoning_effort:'none'}:{};}
 function groqErr(status){
   if(status===401)return '🔑 La chiave Groq non sembra valida. Controllala nelle Impostazioni → AI avanzata.';
   if(status===429)return '⏳ Troppe richieste (limite Groq). Riprova tra poco.';
@@ -1819,15 +1822,17 @@ async function askClaude(t,key){
   const hist=chatHist.slice(-11,-1).map(m=>({role:m.role==='user'?'user':'assistant',
     content:String(m.txt).replace(/<[^>]+>/g,'').trim()})).filter(m=>m.content);
   const messages=[{role:'system',content:sys}].concat(hist,[{role:'user',content:t}]);
+  const mdl=groqModel();
   try{
     const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
       headers:{'content-type':'application/json','authorization':'Bearer '+key},
-      body:JSON.stringify({model:groqModel(),max_tokens:1024,temperature:0.6,messages})
+      body:JSON.stringify(Object.assign({model:mdl,max_tokens:1024,temperature:0.6,messages},groqExtra(mdl)))
     });
     if(!r.ok)return groqErr(r.status);
     const data=await r.json();
-    const txt=((data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'').trim();
+    let txt=((data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'').trim();
+    txt=txt.split('</think>').pop().trim(); // scarta eventuale ragionamento
     return txt || 'Non ho una risposta in questo momento, riprova.';
   }catch(e){
     return '📡 Niente connessione: l’AI avanzata richiede internet. Posso comunque gestire menù, spesa, ricette, diario e peso anche offline!';
