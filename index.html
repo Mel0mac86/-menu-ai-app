@@ -13,67 +13,77 @@
 <title>Macro AI — Menù Nutrizionale</title>
 <style>
 :root{
-  --bg:#0a0a0a; --card:#161616; --card2:#1f1f1f; --line:#262626;
-  --txt:#f5f5f5; --muted:#8a8a8a; --accent:#34d399; --accent2:#22d3ee;
+  --bg:#08090c; --card:#14161b; --card2:#1b1e26; --elev:#212633;
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+  --txt:#f4f6f9; --muted:#9aa2b0; --accent:#34d399; --accent2:#22d3ee; --ink:#032018;
+  --grad:linear-gradient(135deg,#34d399 0%,#22d3ee 100%);
   --pro:#60a5fa; --car:#fbbf24; --fat:#f472b6; --cal:#34d399;
   --danger:#f87171; --warn:#fbbf24;
+  --sh:0 8px 28px rgba(0,0,0,.38); --sh-acc:0 10px 26px rgba(52,211,153,.24); --r:18px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);overflow:hidden}
-.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:520px;margin:0 auto;position:relative;background:var(--bg)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;color:var(--txt);overflow:hidden;
+  background:radial-gradient(1100px 560px at 50% -8%,#12181f 0%,#0a0c10 46%,var(--bg) 100%);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:520px;margin:0 auto;position:relative;background:transparent}
 
 /* Header */
-header{padding:max(14px,env(safe-area-inset-top)) 18px 12px;background:linear-gradient(180deg,#111,#0a0a0a);border-bottom:1px solid var(--line);flex-shrink:0}
+header{padding:max(14px,env(safe-area-inset-top)) 18px 12px;background:linear-gradient(180deg,rgba(20,24,31,.92),rgba(10,12,16,.72));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);flex-shrink:0;position:relative;z-index:5}
 .htop{display:flex;align-items:center;justify-content:space-between}
-header h1{font-size:19px;font-weight:700;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
-.logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:15px}
-.gear{background:var(--card2);border:none;color:var(--txt);width:36px;height:36px;border-radius:11px;font-size:17px;display:flex;align-items:center;justify-content:center}
+header h1{font-size:20px;font-weight:800;letter-spacing:-.4px;display:flex;align-items:center;gap:10px}
+.logo{width:30px;height:30px;border-radius:10px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:var(--sh-acc)}
+.gear{background:var(--card2);border:1px solid var(--line);color:var(--txt);width:38px;height:38px;border-radius:12px;font-size:17px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.gear:active{transform:scale(.92)}
 
 /* Content */
 .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px}
-.screen{display:none;animation:fade .25s ease}
+.content::-webkit-scrollbar{display:none}
+.screen{display:none;animation:fade .3s ease}
 .screen.active{display:block}
-@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* Bottom nav */
-.nav{display:flex;background:#0d0d0d;border-top:1px solid var(--line);padding:8px 8px max(8px,env(safe-area-inset-bottom));flex-shrink:0}
-.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;border-radius:10px;transition:.15s}
-.nav button .ic{font-size:20px}
-.nav button.active{color:var(--accent)}
+.nav{display:flex;gap:2px;background:linear-gradient(180deg,rgba(13,15,19,.82),rgba(8,9,12,.96));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:8px 8px max(8px,env(safe-area-inset-bottom));flex-shrink:0}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-size:10px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0;border-radius:14px;transition:.2s cubic-bezier(.2,.8,.2,1)}
+.nav button .ic{font-size:21px;transition:.2s;filter:grayscale(.35) opacity(.85)}
+.nav button.active{color:var(--accent);background:linear-gradient(180deg,rgba(52,211,153,.15),rgba(52,211,153,.03))}
+.nav button.active .ic{filter:none;transform:translateY(-1px) scale(1.08)}
 
 /* Cards & generic */
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
-.card h2{font-size:16px;font-weight:700;margin-bottom:4px}
-.card .sub{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px}
-.btn{display:block;width:100%;padding:15px;border:none;border-radius:14px;font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#04130d;text-align:center;cursor:pointer}
-.btn:active{transform:scale(.98)}
-.btn.sec{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
-.btn.ghost{background:none;border:1px solid var(--line);color:var(--txt)}
-.btn.danger{background:rgba(248,113,113,.12);color:var(--danger);border:1px solid rgba(248,113,113,.3)}
-.btn.sm{padding:9px 14px;font-size:13px;width:auto;display:inline-block;border-radius:11px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--sh)}
+.card h2{font-size:16px;font-weight:800;letter-spacing:-.2px;margin-bottom:4px}
+.card .sub{font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:14px}
+.btn{position:relative;display:block;width:100%;padding:15px;border:none;border-radius:14px;font-size:15px;font-weight:800;letter-spacing:.1px;background:var(--grad);color:var(--ink);text-align:center;cursor:pointer;box-shadow:var(--sh-acc);overflow:hidden;transition:transform .12s,box-shadow .2s}
+.btn::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.28),transparent 46%);opacity:.55;pointer-events:none}
+.btn:active{transform:scale(.975);box-shadow:0 4px 14px rgba(52,211,153,.2)}
+.btn.sec{background:var(--card2);color:var(--txt);border:1px solid var(--line2);box-shadow:none}
+.btn.ghost{background:rgba(255,255,255,.02);border:1px solid var(--line2);color:var(--txt);box-shadow:none}
+.btn.danger{background:rgba(248,113,113,.14);color:var(--danger);border:1px solid rgba(248,113,113,.32);box-shadow:none}
+.btn.sec::before,.btn.ghost::before,.btn.danger::before{display:none}
+.btn.sm{padding:9px 14px;font-size:13px;width:auto;display:inline-block;border-radius:11px;box-shadow:none}
 .row{display:flex;gap:10px}
 .row .btn{flex:1}
 
 /* Inputs */
 label.fld{display:block;margin-bottom:14px}
-label.fld .lab{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:7px;display:block}
-label.fld .hint{font-size:11.5px;color:var(--muted);font-weight:400}
-input[type=text],input[type=number],textarea,select{width:100%;padding:13px 14px;background:var(--card2);border:1px solid var(--line);border-radius:12px;color:var(--txt);font-size:15px;font-family:inherit;outline:none}
-input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+label.fld .lab{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:7px;display:block}
+label.fld .hint{font-size:11.5px;color:var(--muted);font-weight:500}
+input[type=text],input[type=number],input[type=password],textarea,select{width:100%;padding:13px 14px;background:var(--card2);border:1px solid var(--line2);border-radius:12px;color:var(--txt);font-size:15px;font-family:inherit;outline:none;transition:.18s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(52,211,153,.16)}
 textarea{resize:vertical;min-height:64px;line-height:1.5}
 .stepper{display:flex;align-items:center;gap:14px}
-.stepper button{width:42px;height:42px;border-radius:12px;background:var(--card2);border:1px solid var(--line);color:var(--txt);font-size:22px;font-weight:700;flex-shrink:0}
-.stepper .val{flex:1;text-align:center;font-size:24px;font-weight:800}
+.stepper button{width:44px;height:44px;border-radius:13px;background:var(--card2);border:1px solid var(--line2);color:var(--txt);font-size:22px;font-weight:700;flex-shrink:0;transition:.12s}
+.stepper button:active{transform:scale(.9);border-color:var(--accent)}
+.stepper .val{flex:1;text-align:center;font-size:26px;font-weight:800;letter-spacing:-.5px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{padding:9px 14px;background:var(--card2);border:1px solid var(--line);border-radius:20px;font-size:13px;font-weight:600;color:var(--muted)}
-.chip.on{background:var(--accent);color:#04130d;border-color:var(--accent)}
+.chip{padding:9px 14px;background:var(--card2);border:1px solid var(--line2);border-radius:20px;font-size:13px;font-weight:600;color:var(--muted);transition:.15s}
+.chip.on{background:var(--grad);color:var(--ink);border-color:transparent;font-weight:800;box-shadow:var(--sh-acc)}
 .toggle{display:flex;align-items:center;justify-content:space-between;padding:13px 0}
-.toggle .tlab{font-size:14px;font-weight:600}
-.sw{width:50px;height:30px;border-radius:30px;background:var(--card2);border:1px solid var(--line);position:relative;flex-shrink:0;transition:.2s}
-.sw.on{background:var(--accent);border-color:var(--accent)}
-.sw::after{content:'';position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.2s}
-.sw.on::after{left:22px}
+.toggle .tlab{font-size:14px;font-weight:700}
+.sw{width:52px;height:31px;border-radius:30px;background:var(--card2);border:1px solid var(--line2);position:relative;flex-shrink:0;transition:.25s}
+.sw.on{background:var(--grad);border-color:transparent}
+.sw::after{content:'';position:absolute;width:25px;height:25px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.25s cubic-bezier(.3,1.5,.5,1);box-shadow:0 2px 6px rgba(0,0,0,.45)}
+.sw.on::after{left:24px}
 
 /* Onboarding */
 .ob-prog{display:flex;gap:5px;margin-bottom:20px}
@@ -87,19 +97,20 @@ textarea{resize:vertical;min-height:64px;line-height:1.5}
 
 /* Macro pills */
 .macro-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.mp{background:var(--card2);border-radius:12px;padding:10px 6px;text-align:center}
-.mp .v{font-size:17px;font-weight:800}
-.mp .l{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.mp{background:linear-gradient(180deg,rgba(255,255,255,.04),transparent),var(--card2);border:1px solid var(--line);border-radius:14px;padding:11px 6px;text-align:center}
+.mp .v{font-size:18px;font-weight:800;letter-spacing:-.4px}
+.mp .l{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
 .mp.cal .v{color:var(--cal)} .mp.pro .v{color:var(--pro)} .mp.car .v{color:var(--car)} .mp.fat .v{color:var(--fat)}
 
 /* Day cards */
 .daysel{display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:4px;-webkit-overflow-scrolling:touch}
 .daysel::-webkit-scrollbar{display:none}
-.dpill{flex-shrink:0;padding:9px 13px;border-radius:12px;background:var(--card2);border:1px solid var(--line);font-size:12px;font-weight:700;color:var(--muted);position:relative;text-align:center;min-width:52px}
-.dpill .dd{font-size:10px;font-weight:600;color:var(--muted);display:block}
-.dpill.on{background:var(--accent);color:#04130d;border-color:var(--accent)}
-.dpill.on .dd{color:#04130d}
+.dpill{flex-shrink:0;padding:9px 13px;border-radius:14px;background:var(--card2);border:1px solid var(--line);font-size:12px;font-weight:800;color:var(--muted);position:relative;text-align:center;min-width:54px;transition:.15s}
+.dpill .dd{font-size:10px;font-weight:700;color:var(--muted);display:block}
+.dpill.on{background:var(--grad);color:var(--ink);border-color:transparent;box-shadow:var(--sh-acc)}
+.dpill.on .dd{color:var(--ink)}
 .dpill .tdot{position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--accent2)}
+.dpill.on .tdot{background:var(--ink)}
 
 .daytitle{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .daytitle h2{font-size:20px;font-weight:800}
@@ -108,84 +119,91 @@ textarea{resize:vertical;min-height:64px;line-height:1.5}
 .daytag.special{background:rgba(244,114,182,.14);color:var(--fat)}
 
 /* Target bar */
-.tgt{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+.tgt{background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--card);border:1px solid var(--line);border-radius:var(--r);padding:15px;margin-bottom:14px;box-shadow:var(--sh)}
 .tgt-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.tgt-h .tt{font-size:12px;color:var(--muted);font-weight:600}
-.bar{height:8px;border-radius:8px;background:var(--card2);overflow:hidden;margin:4px 0 2px}
-.bar>i{display:block;height:100%;border-radius:8px;transition:.4s}
-.barlabel{display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px}
-.barlabel b{font-weight:700}
+.tgt-h .tt{font-size:12px;color:var(--muted);font-weight:700}
+.bar{height:9px;border-radius:9px;background:var(--card2);overflow:hidden;margin:4px 0 2px;box-shadow:inset 0 1px 2px rgba(0,0,0,.3)}
+.bar>i{display:block;height:100%;border-radius:9px;transition:.5s cubic-bezier(.2,.8,.2,1)}
+.barlabel{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:8px}
+.barlabel b{font-weight:800}
 
 /* Meal card */
-.meal{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:12px;overflow:hidden}
-.meal-h{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;background:var(--card)}
-.meal-h .mt{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
-.meal-h .mc{font-size:12px;color:var(--muted);font-weight:600}
-.meal.cheat .meal-h{background:linear-gradient(90deg,rgba(244,114,182,.12),transparent)}
+.meal{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:12px;overflow:hidden;box-shadow:var(--sh)}
+.meal-h{display:flex;align-items:center;justify-content:space-between;padding:14px 15px;background:linear-gradient(180deg,rgba(255,255,255,.03),transparent)}
+.meal-h .mt{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
+.meal-h .mc{font-size:12px;color:var(--muted);font-weight:700}
+.meal.cheat .meal-h{background:linear-gradient(90deg,rgba(244,114,182,.16),transparent)}
 .cheatbadge{font-size:10px;font-weight:800;padding:3px 7px;border-radius:7px;background:var(--fat);color:#1a0410}
-.food{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-top:1px solid var(--line)}
+.food{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;border-top:1px solid var(--line)}
 .food .fi{flex:1;min-width:0}
-.food .fn{font-size:14px;font-weight:600}
+.food .fn{font-size:14px;font-weight:700}
 .food .fg{font-size:11.5px;color:var(--muted);margin-top:2px}
-.food .fmac{display:flex;gap:7px;margin-top:5px;font-size:10.5px;font-weight:700}
+.food .fmac{display:flex;gap:7px;margin-top:6px;font-size:10.5px;font-weight:800}
 .food .fmac .p{color:var(--pro)} .food .fmac .c{color:var(--car)} .food .fmac .f{color:var(--fat)} .food .fmac .k{color:var(--cal)}
-.food .fedit{background:var(--card2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:10px;font-size:14px;flex-shrink:0;margin-left:8px}
+.food .fedit{background:var(--card2);border:1px solid var(--line2);color:var(--muted);width:34px;height:34px;border-radius:11px;font-size:14px;flex-shrink:0;margin-left:8px;transition:.12s}
+.food .fedit:active{transform:scale(.9);border-color:var(--accent)}
 .meal-foot{display:flex;gap:8px;padding:10px 15px;border-top:1px solid var(--line)}
-.meal-foot button{flex:1;background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:9px;border-radius:10px;font-size:12px;font-weight:600}
+.meal-foot button{flex:1;background:var(--card2);border:1px solid var(--line2);color:var(--txt);padding:10px;border-radius:11px;font-size:12px;font-weight:700;transition:.12s}
+.meal-foot button:active{transform:scale(.97)}
 
 /* Chat / Coach */
 .chat{display:flex;flex-direction:column;height:100%}
 .msgs{flex:1;overflow-y:auto;padding:4px 2px 12px;display:flex;flex-direction:column;gap:10px}
-.msg{max-width:86%;padding:11px 14px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word}
-.msg.ai{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px;align-self:flex-start}
-.msg.user{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#04130d;border-bottom-right-radius:5px;align-self:flex-end;font-weight:600}
+.msgs::-webkit-scrollbar{display:none}
+.msg{max-width:88%;padding:12px 15px;border-radius:18px;font-size:14px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word;box-shadow:var(--sh);animation:pop .22s ease}
+@keyframes pop{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+.msg.ai{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:6px;align-self:flex-start}
+.msg.user{background:var(--grad);color:var(--ink);border-bottom-right-radius:6px;align-self:flex-end;font-weight:600;box-shadow:var(--sh-acc)}
 .msg.ai b{color:var(--accent)}
 .quick{display:flex;gap:7px;overflow-x:auto;padding:8px 0;-webkit-overflow-scrolling:touch}
 .quick::-webkit-scrollbar{display:none}
-.quick button{flex-shrink:0;background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:8px 13px;border-radius:18px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.quick button{flex-shrink:0;background:var(--card2);border:1px solid var(--line2);color:var(--txt);padding:9px 14px;border-radius:18px;font-size:12.5px;font-weight:700;white-space:nowrap;transition:.12s}
+.quick button:active{transform:scale(.95);border-color:var(--accent)}
 .chatbar{display:flex;gap:8px;padding-top:8px;border-top:1px solid var(--line)}
 .chatbar input{flex:1}
-.chatbar button{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#04130d;width:48px;border-radius:12px;font-size:18px;font-weight:700;flex-shrink:0}
+.chatbar button{background:var(--grad);border:none;color:var(--ink);width:50px;border-radius:14px;font-size:18px;font-weight:700;flex-shrink:0;box-shadow:var(--sh-acc)}
 
 /* Shopping & recipes */
-.cat-h{font-size:13px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
-.shop-item{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
-.shop-item .ck{width:24px;height:24px;border-radius:8px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:transparent}
-.shop-item.done .ck{background:var(--accent);border-color:var(--accent);color:#04130d}
+.cat-h{font-size:12px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;margin:18px 0 8px}
+.shop-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:13px;margin-bottom:8px;box-shadow:var(--sh);transition:.12s}
+.shop-item:active{transform:scale(.99)}
+.shop-item .ck{width:24px;height:24px;border-radius:8px;border:2px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:transparent;transition:.15s}
+.shop-item.done .ck{background:var(--grad);border-color:transparent;color:var(--ink)}
 .shop-item.done .si-n{text-decoration:line-through;color:var(--muted)}
-.shop-item .si-n{flex:1;font-size:14px;font-weight:600}
-.shop-item .si-q{font-size:12px;color:var(--muted);font-weight:600}
-.recipe{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:12px}
-.recipe .rh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.recipe .rh .rt{font-size:15px;font-weight:700}
-.recipe .af{font-size:10px;font-weight:800;padding:3px 8px;border-radius:7px;background:rgba(34,211,238,.14);color:var(--accent2)}
+.shop-item .si-n{flex:1;font-size:14px;font-weight:700}
+.shop-item .si-q{font-size:12px;color:var(--muted);font-weight:700}
+.recipe{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh)}
+.recipe .rh{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.recipe .rh .rt{font-size:15px;font-weight:800}
+.recipe .af{font-size:10px;font-weight:800;padding:3px 8px;border-radius:7px;background:rgba(34,211,238,.16);color:var(--accent2)}
 .recipe .ring{font-size:12.5px;color:var(--muted);line-height:1.6}
-.recipe .rsteps{font-size:13px;line-height:1.6;margin-top:8px;color:var(--txt)}
+.recipe .rsteps{font-size:13px;line-height:1.65;margin-top:8px;color:var(--txt)}
 
 /* Modal */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:50;display:none;align-items:flex-end;justify-content:center}
 .modal-bg.show{display:flex;animation:fade .2s}
-.modal{background:var(--card);border:1px solid var(--line);border-radius:22px 22px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;padding:18px 18px max(18px,env(safe-area-inset-bottom));animation:slideup .28s cubic-bezier(.2,.9,.3,1)}
+.modal{background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--card);border:1px solid var(--line2);border-bottom:none;border-radius:26px 26px 0 0;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:10px 18px max(18px,env(safe-area-inset-bottom));animation:slideup .34s cubic-bezier(.2,.9,.25,1);box-shadow:0 -14px 44px rgba(0,0,0,.55)}
+.modal::-webkit-scrollbar{display:none}
 @keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
-.modal .grab{width:38px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 14px}
-.modal h3{font-size:18px;font-weight:800;margin-bottom:4px}
-.modal .msub{font-size:13px;color:var(--muted);margin-bottom:16px}
+.modal .grab{width:40px;height:5px;border-radius:5px;background:var(--line2);margin:8px auto 16px}
+.modal h3{font-size:19px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px}
+.modal .msub{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5}
 .altlist{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
-.alt{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--card2);border:1px solid var(--line);border-radius:13px}
-.alt .an{font-size:14px;font-weight:600}
+.alt{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--card2);border:1px solid var(--line);border-radius:14px}
+.alt .an{font-size:14px;font-weight:700}
 .alt .am{font-size:11px;color:var(--muted);margin-top:2px}
-.alt button{background:var(--accent);border:none;color:#04130d;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;flex-shrink:0;margin-left:8px}
-.divlbl{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px;display:flex;align-items:center;gap:10px}
-.divlbl::before,.divlbl::after{content:'';flex:1;height:1px;background:var(--line)}
-.note{font-size:12px;color:var(--muted);line-height:1.5;background:var(--card2);border-radius:10px;padding:10px 12px;margin-top:10px}
+.alt button{background:var(--grad);border:none;color:var(--ink);padding:9px 15px;border-radius:11px;font-size:12px;font-weight:800;flex-shrink:0;margin-left:8px;box-shadow:var(--sh-acc)}
+.divlbl{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin:16px 0 8px;display:flex;align-items:center;gap:10px}
+.divlbl::before,.divlbl::after{content:'';flex:1;height:1px;background:var(--line2)}
+.note{font-size:12px;color:var(--muted);line-height:1.55;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-top:10px}
 
-.empty{text-align:center;padding:50px 20px;color:var(--muted)}
-.empty .ee{font-size:46px;margin-bottom:12px}
-.empty h3{font-size:17px;font-weight:700;color:var(--txt);margin-bottom:6px}
+.empty{text-align:center;padding:56px 20px;color:var(--muted)}
+.empty .ee{font-size:48px;margin-bottom:12px}
+.empty h3{font-size:17px;font-weight:800;color:var(--txt);margin-bottom:6px}
 .empty p{font-size:13px;line-height:1.5}
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#04130d;padding:11px 18px;border-radius:12px;font-size:13px;font-weight:700;z-index:100;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--grad);color:var(--ink);padding:12px 20px;border-radius:14px;font-size:13px;font-weight:800;z-index:100;opacity:0;transition:.3s cubic-bezier(.2,.9,.25,1);pointer-events:none;white-space:nowrap;box-shadow:0 10px 30px rgba(0,0,0,.5),var(--sh-acc)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(4,19,13,.3);border-top-color:#04130d;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(127,127,127,.3);border-top-color:currentColor;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
 @keyframes sp{to{transform:rotate(360deg)}}
 
 /* Print */
@@ -1222,7 +1240,7 @@ function bcNotFound(code,ctx,neterr){
    ============================================================ */
 let _pmData=null;
 function photoMeal(){
-  const key=localStorage.getItem('macroai_key');
+  const key=aiKey();
   if(!(S.aiEnabled&&key)){
     openModal(`<h3>📸 Foto al piatto</h3>
       <div class="msub">Scatti una foto al piatto e stimo automaticamente ingredienti e calorie.</div>
@@ -1240,8 +1258,7 @@ function pmAnalyze(input){
   const file=input.files&&input.files[0]; if(!file)return;
   openModal(`<h3>📸 Analizzo il piatto…</h3><div style="text-align:center;padding:26px"><span class="spin"></span> Riconosco gli ingredienti e stimo le calorie…</div>`);
   downscaleImage(file,1024,0.72).then(im=>{
-    const key=localStorage.getItem('macroai_key');
-    return analyzePlate(im.data,im.mime,key);
+    return analyzePlate(im.data,im.mime);
   }).then(res=>{
     if(res.error){openModal(`<h3>😕 ${res.error}</h3><div class="msub">Prova con una foto più nitida e ravvicinata.</div><button class="btn" style="margin-top:12px" onclick="photoMeal()">Riprova</button>`);return;}
     _pmData={dish:res.piatto||'Piatto',note:res.nota||'',ing:(res.ingredienti||[]).map(x=>({name:String(x.nome||'ingrediente'),g:Math.round(+x.g||0),k:Math.round(+x.kcal||0),p:Math.round((+x.p||0)*10)/10,c:Math.round((+x.c||0)*10)/10,f:Math.round((+x.f||0)*10)/10}))};
@@ -1266,24 +1283,39 @@ function downscaleImage(file,max,q){
     img.src=url;
   });
 }
-async function analyzePlate(data,mime,key){
-  const sys='Sei un nutrizionista esperto. Analizzi foto di piatti di cibo e stimi ingredienti, grammature e calorie in modo realistico. Rispondi SEMPRE e SOLO con un oggetto JSON valido, senza testo attorno e senza markdown.';
-  const prompt='Analizza questa foto di un piatto. Identifica il piatto e gli ingredienti visibili con le grammature stimate a occhio. Rispondi con questo JSON (numeri, in italiano): {"piatto":"nome breve","ingredienti":[{"nome":"...","g":numero,"kcal":numero,"p":numero,"c":numero,"f":numero}],"totale":{"kcal":numero,"p":numero,"c":numero,"f":numero},"nota":"1 frase con eventuali assunzioni"}. Se non è cibo, usa ingredienti vuoto.';
-  let r; const vmdl=groqVModel();
-  try{
-    r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
-      headers:{'content-type':'application/json','authorization':'Bearer '+key},
-      body:JSON.stringify(Object.assign({model:vmdl,max_tokens:1500,temperature:0.3,
-        messages:[{role:'system',content:sys},{role:'user',content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:'data:'+mime+';base64,'+data}}]}]},groqExtra(vmdl)))});
-  }catch(e){return {error:'Niente connessione'};}
-  if(!r.ok){ if(r.status===401)return{error:'Chiave Groq non valida'}; if(r.status===429)return{error:'Troppe richieste, riprova tra poco'}; if(r.status===404||r.status===400)return{error:'Modello foto non disponibile: aggiorna il nome nelle Impostazioni → AI avanzata'}; return {error:'Errore AI ('+r.status+')'}; }
-  const j=await r.json();
-  let txt=((j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'').trim();
-  txt=txt.split('</think>').pop(); // scarta eventuale ragionamento del modello
+const PLATE_SYS='Sei un nutrizionista esperto. Analizzi foto di piatti di cibo e stimi ingredienti, grammature e calorie in modo realistico. Rispondi SEMPRE e SOLO con un oggetto JSON valido, senza testo attorno e senza markdown.';
+const PLATE_PROMPT='Analizza questa foto di un piatto. Identifica il piatto e gli ingredienti visibili con le grammature stimate a occhio. Rispondi con questo JSON (numeri, in italiano): {"piatto":"nome breve","ingredienti":[{"nome":"...","g":numero,"kcal":numero,"p":numero,"c":numero,"f":numero}],"totale":{"kcal":numero,"p":numero,"c":numero,"f":numero},"nota":"1 frase con eventuali assunzioni"}. Se non è cibo, usa ingredienti vuoto.';
+function parsePlate(txt){
+  txt=(txt||'').split('</think>').pop();
   const s=txt.indexOf('{'), e=txt.lastIndexOf('}'); if(s>=0&&e>s)txt=txt.slice(s,e+1);
   let obj; try{obj=JSON.parse(txt);}catch(err){return {error:'Non ho capito la foto, riprova'};}
   if(!obj.ingredienti||!obj.ingredienti.length)return {error:'Non ho riconosciuto cibo nella foto'};
   return obj;
+}
+// dispatcher analisi foto
+async function analyzePlate(data,mime){ return aiProvider()==='gemini'?analyzeGeminiPlate(data,mime):analyzeGroqPlate(data,mime); }
+async function analyzeGroqPlate(data,mime){
+  const key=localStorage.getItem('macroai_key'); let r; const vmdl=groqVModel();
+  try{
+    r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
+      headers:{'content-type':'application/json','authorization':'Bearer '+key},
+      body:JSON.stringify(Object.assign({model:vmdl,max_tokens:1500,temperature:0.3,
+        messages:[{role:'system',content:PLATE_SYS},{role:'user',content:[{type:'text',text:PLATE_PROMPT},{type:'image_url',image_url:{url:'data:'+mime+';base64,'+data}}]}]},groqExtra(vmdl)))});
+  }catch(e){return {error:'Niente connessione'};}
+  if(!r.ok){ if(r.status===401)return{error:'Chiave Groq non valida'}; if(r.status===429)return{error:'Troppe richieste, riprova tra poco'}; if(r.status===404||r.status===400)return{error:'Modello foto non disponibile: aggiorna il nome nelle Impostazioni → AI avanzata'}; return {error:'Errore AI ('+r.status+')'}; }
+  const j=await r.json();
+  return parsePlate((j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'');
+}
+async function analyzeGeminiPlate(data,mime){
+  const key=localStorage.getItem('macroai_gkey'); let r;
+  try{
+    r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(geminiModel())+':generateContent?key='+encodeURIComponent(key),{method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({systemInstruction:{parts:[{text:PLATE_SYS}]},contents:[{role:'user',parts:[{text:PLATE_PROMPT},{inlineData:{mimeType:mime,data:data}}]}],generationConfig:{maxOutputTokens:1500,temperature:0.3}})});
+  }catch(e){return {error:'Niente connessione'};}
+  if(!r.ok){ if(r.status===400||r.status===403)return{error:'Chiave Gemini non valida'}; if(r.status===429)return{error:'Troppe richieste, riprova tra poco'}; if(r.status===404)return{error:'Modello Gemini non trovato: controlla le Impostazioni'}; return {error:'Errore AI ('+r.status+')'}; }
+  const d=await r.json();
+  return parsePlate(geminiText(d));
 }
 function pmTotals(){return _pmData.ing.reduce((a,x)=>({k:a.k+x.k,p:a.p+x.p,c:a.c+x.c,f:a.f+x.f}),{k:0,p:0,c:0,f:0});}
 function pmRender(){
@@ -1790,10 +1822,10 @@ async function coachSend(){
   const local=coachReply(t);
   if(local!==null){ setTimeout(()=>pushMsg('ai',local),250); return; }
   // 2) domanda generica: usa l'AI avanzata se attiva, altrimenti fallback
-  const key=localStorage.getItem('macroai_key');
+  const key=aiKey();
   if(S.aiEnabled && key){
     const id=showTyping();
-    const ans=await askClaude(t,key);
+    const ans=await askClaude(t);
     removeTyping(id);
     pushMsg('ai',ans);
   } else {
@@ -1816,27 +1848,53 @@ function groqErr(status){
   if(status===404||status===400)return '⚠️ Modello Groq non disponibile: controlla il nome del modello nelle Impostazioni → AI avanzata (i modelli Groq cambiano nel tempo).';
   return '⚠️ L’AI non risponde (errore '+status+'). Le funzioni del menù restano disponibili offline.';
 }
-async function askClaude(t,key){
+// ---- provider AI selezionabile: Groq oppure Google Gemini ----
+function aiProvider(){return localStorage.getItem('macroai_provider')||'groq';}
+function aiKey(){return aiProvider()==='gemini'?localStorage.getItem('macroai_gkey'):localStorage.getItem('macroai_key');}
+const GEMINI_MODEL_DEFAULT='gemini-2.5-flash';
+function geminiModel(){return localStorage.getItem('macroai_gmodel')||GEMINI_MODEL_DEFAULT;}
+function geminiText(d){try{return ((d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[]).map(p=>p.text||'').join('').trim();}catch(e){return '';}}
+function geminiErr(s){
+  if(s===400||s===403)return '🔑 La chiave Gemini non sembra valida (o il modello non è accessibile). Controllala nelle Impostazioni → AI avanzata.';
+  if(s===429)return '⏳ Troppe richieste (limite Gemini). Riprova tra poco.';
+  if(s===404)return '⚠️ Modello Gemini non trovato: aggiorna il nome nelle Impostazioni → AI avanzata.';
+  return '⚠️ L’AI non risponde (errore '+s+'). Le funzioni del menù restano disponibili offline.';
+}
+const OFFLINE_MSG='📡 Niente connessione: l’AI avanzata richiede internet. Posso comunque gestire menù, spesa, ricette, diario e peso anche offline!';
+// dispatcher chat
+async function askClaude(t){ return aiProvider()==='gemini'?askGeminiChat(t):askGroqChat(t); }
+async function askGroqChat(t){
+  const key=localStorage.getItem('macroai_key');
   const sys=coachSystemPrompt();
-  // storico: ultimi messaggi, ripuliti dall'HTML (formato OpenAI/Groq)
   const hist=chatHist.slice(-11,-1).map(m=>({role:m.role==='user'?'user':'assistant',
     content:String(m.txt).replace(/<[^>]+>/g,'').trim()})).filter(m=>m.content);
   const messages=[{role:'system',content:sys}].concat(hist,[{role:'user',content:t}]);
   const mdl=groqModel();
   try{
-    const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-      method:'POST',
+    const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
       headers:{'content-type':'application/json','authorization':'Bearer '+key},
-      body:JSON.stringify(Object.assign({model:mdl,max_tokens:1024,temperature:0.6,messages},groqExtra(mdl)))
-    });
+      body:JSON.stringify(Object.assign({model:mdl,max_tokens:1024,temperature:0.6,messages},groqExtra(mdl)))});
     if(!r.ok)return groqErr(r.status);
     const data=await r.json();
     let txt=((data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'').trim();
-    txt=txt.split('</think>').pop().trim(); // scarta eventuale ragionamento
+    txt=txt.split('</think>').pop().trim();
     return txt || 'Non ho una risposta in questo momento, riprova.';
-  }catch(e){
-    return '📡 Niente connessione: l’AI avanzata richiede internet. Posso comunque gestire menù, spesa, ricette, diario e peso anche offline!';
-  }
+  }catch(e){return OFFLINE_MSG;}
+}
+async function askGeminiChat(t){
+  const key=localStorage.getItem('macroai_gkey');
+  const sys=coachSystemPrompt();
+  const hist=chatHist.slice(-11,-1).map(m=>({role:m.role==='user'?'user':'model',
+    parts:[{text:String(m.txt).replace(/<[^>]+>/g,'').trim()}]})).filter(m=>m.parts[0].text);
+  const contents=hist.concat([{role:'user',parts:[{text:t}]}]);
+  try{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(geminiModel())+':generateContent?key='+encodeURIComponent(key),{method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents,generationConfig:{maxOutputTokens:1024,temperature:0.6}})});
+    if(!r.ok)return geminiErr(r.status);
+    const d=await r.json();
+    return geminiText(d)||'Non ho una risposta in questo momento, riprova.';
+  }catch(e){return OFFLINE_MSG;}
 }
 function coachSystemPrompt(){
   let p='Sei l’AI coach nutrizionale dell’app "Macro AI". Rispondi in italiano, in modo amichevole, conciso e pratico. ';
@@ -1996,21 +2054,33 @@ function renderSettings(){
     <div class="sub">Crea nuovi alimenti o modifica quelli esistenti (proteine, carboidrati, grassi, kcal). Restano salvati e li ritrovi sempre nella ricerca — non devi riscriverli ogni volta.</div>
     <button class="btn sec" style="width:100%" onclick="openFoodManager()">Gestisci alimenti${CUSTOM.length?' ('+CUSTOM.length+' tuoi)':''}</button></div>`;
 
-  // AI avanzata (opzionale) — Groq
-  const hasKey=!!localStorage.getItem('macroai_key');
-  const curModel=localStorage.getItem('macroai_model')||'', curVModel=localStorage.getItem('macroai_vmodel')||'';
-  h+=`<div class="card"><h2>🤖 AI avanzata — Groq (opzionale)</h2>
-    <div class="sub">Fa rispondere il Coach a <b>qualsiasi</b> domanda e abilita la <b>Foto al piatto</b>, usando <b>Groq</b> (ha un piano gratuito). Richiede internet e una tua chiave Groq. Il coach base (menù, spesa, ricette, diario, peso, domande di nutrizione) funziona sempre, anche offline e senza chiave.</div>
+  // AI avanzata (opzionale) — Groq o Google Gemini
+  const prov=aiProvider();
+  const hasKey=!!localStorage.getItem('macroai_key'), hasGKey=!!localStorage.getItem('macroai_gkey');
+  const curModel=localStorage.getItem('macroai_model')||'', curVModel=localStorage.getItem('macroai_vmodel')||'', curGModel=localStorage.getItem('macroai_gmodel')||'';
+  h+=`<div class="card"><h2>🤖 AI avanzata (opzionale)</h2>
+    <div class="sub">Fa rispondere il Coach a <b>qualsiasi</b> domanda e abilita la <b>Foto al piatto</b>. Scegli il servizio AI (entrambi hanno un piano gratuito). Il coach base (menù, spesa, ricette, diario, peso, nutrizione) funziona sempre, anche offline.</div>
     <div class="toggle"><span class="tlab">Attiva AI avanzata</span><div class="sw ${d.aiEnabled?'on':''}" id="st_ai" onclick="this.classList.toggle('on')"></div></div>
-    <label class="fld"><span class="lab">Chiave API Groq <span class="hint">(salvata solo sul tuo telefono)</span></span>
+    <label class="fld"><span class="lab">Servizio AI</span>
+      <select id="st_provider"><option value="groq" ${prov==='groq'?'selected':''}>Groq (Llama / Qwen)</option><option value="gemini" ${prov==='gemini'?'selected':''}>Google Gemini</option></select></label>
+
+    <div class="divlbl">Groq</div>
+    <label class="fld"><span class="lab">Chiave API Groq <span class="hint">(gsk_…, solo sul telefono)</span></span>
       <input type="password" id="st_key" placeholder="${hasKey?'•••••••• (già salvata)':'gsk_...'}" autocomplete="off"></label>
-    <div class="note">🔑 Crea la chiave gratis su <b>console.groq.com/keys</b>. Resta in locale e serve solo per l’AI del coach e la foto al piatto.</div>
-    <label class="fld" style="margin-top:14px"><span class="lab">Modello chat <span class="hint">(avanzato — lascia vuoto per il default)</span></span>
-      <input type="text" id="st_model" value="${curModel.replace(/"/g,'&quot;')}" placeholder="${GROQ_MODEL_DEFAULT}" autocomplete="off"></label>
-    <label class="fld"><span class="lab">Modello foto/vision <span class="hint">(avanzato)</span></span>
-      <input type="text" id="st_vmodel" value="${curVModel.replace(/"/g,'&quot;')}" placeholder="${GROQ_VMODEL_DEFAULT}" autocomplete="off"></label>
-    <div class="note">💡 I nomi dei modelli Groq cambiano nel tempo: se l’AI dà errore “modello non disponibile”, aggiorna qui il nome (elenco su <b>console.groq.com/docs/models</b>).</div>
-    ${hasKey?`<button class="btn ghost sm" style="width:100%;margin-top:10px" onclick="if(confirm('Rimuovere la chiave Groq salvata?')){localStorage.removeItem('macroai_key');toast('Chiave rimossa');renderSettings();}">🗑️ Rimuovi chiave salvata</button>`:''}
+    <div class="row" style="gap:8px">
+      <label class="fld" style="flex:1;margin:0"><span class="lab" style="font-size:12px">Modello chat</span><input type="text" id="st_model" value="${curModel.replace(/"/g,'&quot;')}" placeholder="${GROQ_MODEL_DEFAULT}" autocomplete="off"></label>
+      <label class="fld" style="flex:1;margin:0"><span class="lab" style="font-size:12px">Modello foto</span><input type="text" id="st_vmodel" value="${curVModel.replace(/"/g,'&quot;')}" placeholder="${GROQ_VMODEL_DEFAULT}" autocomplete="off"></label>
+    </div>
+    <div class="note">🔑 Chiave gratis su <b>console.groq.com/keys</b>. Modelli su console.groq.com/docs/models.</div>
+    ${hasKey?`<button class="btn ghost sm" style="width:100%;margin-top:8px" onclick="if(confirm('Rimuovere la chiave Groq?')){localStorage.removeItem('macroai_key');toast('Chiave Groq rimossa');renderSettings();}">🗑️ Rimuovi chiave Groq</button>`:''}
+
+    <div class="divlbl">Google Gemini</div>
+    <label class="fld"><span class="lab">Chiave API Gemini <span class="hint">(AIza…, solo sul telefono)</span></span>
+      <input type="password" id="st_gkey" placeholder="${hasGKey?'•••••••• (già salvata)':'AIza...'}" autocomplete="off"></label>
+    <label class="fld" style="margin:0"><span class="lab" style="font-size:12px">Modello Gemini <span class="hint">(chat + foto)</span></span>
+      <input type="text" id="st_gmodel" value="${curGModel.replace(/"/g,'&quot;')}" placeholder="${GEMINI_MODEL_DEFAULT}" autocomplete="off"></label>
+    <div class="note">🔑 Chiave gratis su <b>aistudio.google.com/app/apikey</b>. Un solo modello <i>flash</i> gestisce sia il coach sia la foto al piatto.</div>
+    ${hasGKey?`<button class="btn ghost sm" style="width:100%;margin-top:8px" onclick="if(confirm('Rimuovere la chiave Gemini?')){localStorage.removeItem('macroai_gkey');toast('Chiave Gemini rimossa');renderSettings();}">🗑️ Rimuovi chiave Gemini</button>`:''}
   </div>`;
 
   h+=`<button class="btn" onclick="saveSettings()">💾 Salva e rigenera menù</button>
@@ -2038,14 +2108,19 @@ function saveSettings(){
   S.cheat.f=+document.getElementById('st_chf').value||0;
   S.allergies=document.getElementById('st_alg').value.trim();
   S.dislikes=document.getElementById('st_dis').value.trim();
-  // AI avanzata (Groq)
+  // AI avanzata (Groq o Gemini)
   S.aiEnabled=document.getElementById('st_ai').classList.contains('on');
+  localStorage.setItem('macroai_provider',document.getElementById('st_provider').value);
   const keyIn=document.getElementById('st_key').value.trim();
   if(keyIn)localStorage.setItem('macroai_key',keyIn);
+  const gkeyIn=document.getElementById('st_gkey').value.trim();
+  if(gkeyIn)localStorage.setItem('macroai_gkey',gkeyIn);
   const mdl=document.getElementById('st_model').value.trim();
   const vmdl=document.getElementById('st_vmodel').value.trim();
+  const gmdl=document.getElementById('st_gmodel').value.trim();
   if(mdl)localStorage.setItem('macroai_model',mdl); else localStorage.removeItem('macroai_model');
   if(vmdl)localStorage.setItem('macroai_vmodel',vmdl); else localStorage.removeItem('macroai_vmodel');
+  if(gmdl)localStorage.setItem('macroai_gmodel',gmdl); else localStorage.removeItem('macroai_gmodel');
   save();generateWeek();go('menu');toast('Impostazioni salvate · menù rigenerato ✅');
 }
 function resetAll(){if(confirm('Vuoi rifare il questionario iniziale? Le impostazioni attuali verranno usate come base.')){startOnboarding(S);}}
